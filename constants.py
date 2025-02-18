@@ -16,7 +16,9 @@ from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
 
 from rev import SparkBase, SparkBaseConfig, ClosedLoopConfig
+import phoenix6.hardware.cancoder
 
+phoenix6.hardware.CANcoder(1, "rio")
 
 class NeoMotorConstants:
     kFreeSpeedRpm = 5676
@@ -83,10 +85,10 @@ class DriveConstants:
     kFrontRightDrivingCanId = 1
     kRearRightDrivingCanId = 3
 
-    kFrontLeftTurningCanId = 2
-    kRearLeftTurningCanId = 4
-    kFrontRightTurningCanId = 5
-    kRearRightTurningCanId = 7
+    kFrontLeftTurningCanId = 5
+    kRearLeftTurningCanId = 6
+    kFrontRightTurningCanId = 7
+    kRearRightTurningCanId = 8
 
     kGyroReversed = -1  # can be +1 if not flipped (affects field-relative driving)
 
@@ -180,8 +182,13 @@ class ModuleConstants:
 
 
 class OIConstants:
+    # Constants for the controls of the robot
+    # PS4 controller port
     kDriverControllerPort = 0
     kDriveDeadband = 0.05
+
+    # Button Board controller port
+    kButtonBoardPort = 1
 
 
 class AutoConstants:
