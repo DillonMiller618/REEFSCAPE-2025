@@ -18,11 +18,11 @@ from wpilib import SmartDashboard, Field2d
 from constants import DriveConstants, ModuleConstants
 import swerveutils
 from .maxswervemodule import MAXSwerveModule
-from rev import SparkMax #, SparkFlex
+from rev import SparkMax
 
 #TODO: Alter this to use com.ctre.phoenix.Pigeon2, change to pigeon2
 import navx
-
+import phoenix6.hardware.pigeon2
 
 
 class DriveSubsystem(Subsystem):

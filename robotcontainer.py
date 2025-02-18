@@ -8,7 +8,7 @@ import typing
 
 from commands2 import cmd, InstantCommand, RunCommand
 from commands2.button import JoystickButton
-from wpilib import XboxController
+from wpilib import PS4Controller
 from wpimath.controller import PIDController, ProfiledPIDControllerRadians, HolonomicDriveController
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.trajectory import TrajectoryConfig, TrajectoryGenerator
@@ -31,7 +31,7 @@ class RobotContainer:
         self.robotDrive = DriveSubsystem()
 
         # The driver's controller
-        self.driverController = wpilib.XboxController(OIConstants.kDriverControllerPort)
+        self.driverController = wpilib.PS4Controller(OIConstants.kDriverControllerPort)
 
         # Configure the button bindings and autos
         self.configureButtonBindings()
@@ -67,11 +67,11 @@ class RobotContainer:
         and then passing it to a JoystickButton.
         """
 
-        xButton = JoystickButton(self.driverController, XboxController.Button.kX)
+        xButton = JoystickButton(self.driverController, PS4Controller.Button.kX)
         xButton.onTrue(ResetXY(x=0.0, y=0.0, headingDegrees=0.0, drivetrain=self.robotDrive))
         xButton.whileTrue(RunCommand(self.robotDrive.setX, self.robotDrive))  # use the swerve X brake when "X" is pressed
 
-        yButton = JoystickButton(self.driverController, XboxController.Button.kY)
+        yButton = JoystickButton(self.driverController, PS4Controller.Button.kY)
         yButton.onTrue(ResetSwerveFront(self.robotDrive))
 
     def disablePIDSubsystems(self) -> None:

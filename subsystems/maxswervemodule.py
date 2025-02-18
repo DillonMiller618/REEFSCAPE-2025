@@ -1,4 +1,4 @@
-from rev import SparkMax, SparkFlex, SparkLowLevel, SparkAbsoluteEncoder, SparkBase
+from rev import SparkMax, SparkLowLevel, SparkAbsoluteEncoder, SparkBase
 from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
 
@@ -12,7 +12,7 @@ class MAXSwerveModule:
         turningCANId: int,
         chassisAngularOffset: float,
         turnMotorInverted = True,
-        motorControllerType = SparkFlex,
+        motorControllerType = SparkMax,
     ) -> None:
         """Constructs a MAXSwerveModule and configures the driving and turning motor,
         encoder, and PID controller. This configuration is specific to the REV
