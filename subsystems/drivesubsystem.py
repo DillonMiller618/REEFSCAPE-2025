@@ -18,8 +18,11 @@ from wpilib import SmartDashboard, Field2d
 from constants import DriveConstants, ModuleConstants
 import swerveutils
 from .maxswervemodule import MAXSwerveModule
-from rev import SparkMax, SparkFlex
+from rev import SparkMax #, SparkFlex
+
+#TODO: Alter this to use com.ctre.phoenix.Pigeon2, change to pigeon2
 import navx
+
 
 
 class DriveSubsystem(Subsystem):
@@ -34,7 +37,7 @@ class DriveSubsystem(Subsystem):
             DriveConstants.kFrontLeftTurningCanId,
             DriveConstants.kFrontLeftChassisAngularOffset * enabledChassisAngularOffset,
             turnMotorInverted=ModuleConstants.kTurningMotorInverted,
-            motorControllerType=SparkFlex,
+            motorControllerType=SparkMax,
         )
 
         self.frontRight = MAXSwerveModule(
@@ -42,7 +45,7 @@ class DriveSubsystem(Subsystem):
             DriveConstants.kFrontRightTurningCanId,
             DriveConstants.kFrontRightChassisAngularOffset * enabledChassisAngularOffset,
             turnMotorInverted=ModuleConstants.kTurningMotorInverted,
-            motorControllerType=SparkFlex,
+            motorControllerType=SparkMax,
         )
 
         self.rearLeft = MAXSwerveModule(
@@ -50,7 +53,7 @@ class DriveSubsystem(Subsystem):
             DriveConstants.kRearLeftTurningCanId,
             DriveConstants.kBackLeftChassisAngularOffset * enabledChassisAngularOffset,
             turnMotorInverted=ModuleConstants.kTurningMotorInverted,
-            motorControllerType=SparkFlex,
+            motorControllerType=SparkMax,
         )
 
         self.rearRight = MAXSwerveModule(
@@ -58,7 +61,7 @@ class DriveSubsystem(Subsystem):
             DriveConstants.kRearRightTurningCanId,
             DriveConstants.kBackRightChassisAngularOffset * enabledChassisAngularOffset,
             turnMotorInverted=ModuleConstants.kTurningMotorInverted,
-            motorControllerType=SparkFlex,
+            motorControllerType=SparkMax,
         )
 
         # The gyro sensor

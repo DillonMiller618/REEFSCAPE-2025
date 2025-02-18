@@ -1,3 +1,6 @@
+# SMART #6932 REEFSCAPE-2025
+#### This code is a fork of (we think) Team 1602's CommandRevSwerve Repository. We take no credit for the docs or the framework, please check out their resources below, their docs are very useful.
+
 ## Step-by-step video which shows what's possible
 https://www.youtube.com/watch?v=K2Aj0S4-aKI
 

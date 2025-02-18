@@ -10,7 +10,6 @@ numerical or boolean constants. Don't use this for any other purpose!
 
 import math
 
-import rev
 from wpimath import units
 from wpimath.geometry import Translation2d
 from wpimath.kinematics import SwerveDrive4Kinematics
@@ -21,6 +20,28 @@ from rev import SparkBase, SparkBaseConfig, ClosedLoopConfig
 
 class NeoMotorConstants:
     kFreeSpeedRpm = 5676
+
+
+class LiftEffectorClimbConstants:
+    # CAN IDs for lift motor, effector1 and effector2, liftpivot1 and liftpivot2, and climb motor
+    kLiftVertCanID = 9
+    kEffector1CanID = 10
+    kEffector2CanID = 11
+    kLiftPivot1CanID = 12
+    kLiftPivot2CanID = 13
+    kClimbCanID = 14
+
+    # Motor power levels - 0.0 is 0%, 1.0 is 100%
+    kLiftVertPower = 0.5
+    kEffector1Power = 0.5
+    kEffector2Power = 0.5
+    kLiftPivot1Power = 0.5
+    kLiftPivot2Power = 0.5
+    kClimbPower = 0.75
+
+    # Physical Limits for each
+    #kLiftVertLimit = None # This is determined instead by limit switches
+    # We might not need these, blank for now.
 
 
 class DriveConstants:
