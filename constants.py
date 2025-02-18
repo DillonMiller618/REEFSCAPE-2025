@@ -78,15 +78,15 @@ class DriveConstants:
     kBackRightChassisAngularOffset = math.pi / 2
 
     # SPARK MAX CAN IDs
-    kFrontLeftDrivingCanId = 1
-    kRearLeftDrivingCanId = 2
-    kFrontRightDrivingCanId = 3
-    kRearRightDrivingCanId = 4
+    kFrontLeftDrivingCanId = 6
+    kRearLeftDrivingCanId = 8
+    kFrontRightDrivingCanId = 1
+    kRearRightDrivingCanId = 3
 
-    kFrontLeftTurningCanId = 5
-    kRearLeftTurningCanId = 6
-    kFrontRightTurningCanId = 7
-    kRearRightTurningCanId = 8
+    kFrontLeftTurningCanId = 2
+    kRearLeftTurningCanId = 4
+    kFrontRightTurningCanId = 5
+    kRearRightTurningCanId = 7
 
     kGyroReversed = -1  # can be +1 if not flipped (affects field-relative driving)
 
