@@ -1,8 +1,10 @@
-from rev import SparkMax, SparkLowLevel, SparkAbsoluteEncoder, SparkBase
+from rev import SparkMax, SparkLowLevel, SparkBase
 from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
+from phoenix6.hardware.cancoder import CANcoder
 
 from constants import ModuleConstants, getSwerveDrivingMotorConfig, getSwerveTurningMotorConfig
+
 
 
 class MAXSwerveModule:
@@ -10,6 +12,7 @@ class MAXSwerveModule:
         self,
         drivingCANId: int,
         turningCANId: int,
+        encoderCANId: int,
         chassisAngularOffset: float,
         turnMotorInverted = True,
         motorControllerType = SparkMax,
@@ -22,12 +25,15 @@ class MAXSwerveModule:
         self.chassisAngularOffset = 0
         self.desiredState = SwerveModuleState(0.0, Rotation2d())
 
+
+        # Declares each motor as brushless, sparkmaxes (see above), and gets canid from constants file
         self.drivingSparkMax = motorControllerType(
             drivingCANId, SparkLowLevel.MotorType.kBrushless
         )
         self.turningSparkMax = motorControllerType(
             turningCANId, SparkLowLevel.MotorType.kBrushless
         )
+        self.CANCoder = CANcoder(encoderCANId, "rio")
 
         # Factory reset, so we get the SPARKS MAX to a known state before configuring
         # them. This is useful in case a SPARK MAX is swapped out.
@@ -43,13 +49,13 @@ class MAXSwerveModule:
 
         # Setup encoders and PID controllers for the driving and turning SPARKS MAX.
         self.drivingEncoder = self.drivingSparkMax.getEncoder()
-        self.turningEncoder = self.turningSparkMax.getAbsoluteEncoder()
+        self.turningEncoder = self.CANCoder() # TODO: see if this works lmao
 
         self.drivingPIDController = self.drivingSparkMax.getClosedLoopController()
         self.turningPIDController = self.turningSparkMax.getClosedLoopController()
-
+        
         self.chassisAngularOffset = chassisAngularOffset
-        self.desiredState.angle = Rotation2d(self.turningEncoder.getPosition())
+        self.desiredState.angle = Rotation2d(self.turningEncoder.get_absolute_position()) #idk abt this
         self.drivingEncoder.setPosition(0)
 
     def getState(self) -> SwerveModuleState:
@@ -61,7 +67,7 @@ class MAXSwerveModule:
         # relative to the chassis.
         return SwerveModuleState(
             self.drivingEncoder.getVelocity(),
-            Rotation2d(self.turningEncoder.getPosition() - self.chassisAngularOffset),
+            Rotation2d(self.turningEncoder.get_absolute_position() - self.chassisAngularOffset),
         )
 
     def getPosition(self) -> SwerveModulePosition:
