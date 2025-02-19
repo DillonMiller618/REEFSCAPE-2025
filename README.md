@@ -1,15 +1,14 @@
 # SMART #6932 REEFSCAPE-2025
-#### This code is a fork of (we think) Team 1602's CommandRevSwerve Repository. We take no credit for the docs or the framework, please check out their resources below, their docs are very useful.
-#### (Yes it isn't an actual fork, we needed a seperate repo for commits)
+#### This code is a fork of Gene Panov's (username epanov1602) [CommandRevSwerve](https://github.com/epanov1602/CommandRevSwerve) Repository. We take no credit for the docs or the framework. Guides are below for how to properly add subsystems to the repository.
 
-## Step-by-step video which shows what's possible
-https://www.youtube.com/watch?v=K2Aj0S4-aKI
+## Requirements
+- Robotpy (latest)
+- Latest modules in pyproject.toml (done with `py -m pip install robotpy[all]`)
+- Python 3.13+
+- WPILib 2025.2.1
 
-## Other Rev examples to explore
-https://github.com/robotpy/robotpy-rev/tree/main/examples
-
-## Adding other things to this (or similar) robot
-(all of these will also work fine on a tank/arcade/mecanum drive robot)
+## How to add any manner of subsystems (if threre isn't one already):
+(These also work just fine on tank/mechanum drivetrains)
 - [Adding an Arm Subsystem](docs/Adding_Arm.md)
 - [Adding a Camera Subsystem](docs/Adding_Camera.md)
 - [Adding an Elevator Subsystem](docs/Adding_Elevator.md)
@@ -24,3 +23,6 @@ https://github.com/robotpy/robotpy-rev/tree/main/examples
 - [Autonomous Driving and Aiming](docs/Command_Driving_Aiming.md)
 - [Add "Pick Up" Command](docs/Command_PickUp.md)
 - [Add "Shoot" Command](docs/Command_Shoot.md)
+
+## Step-by-Step Walkthrough by Gene Panov
+https://www.youtube.com/watch?v=K2Aj0S4-aKI
