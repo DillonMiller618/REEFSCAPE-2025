@@ -90,6 +90,13 @@ class DriveConstants:
     kFrontRightTurningCanId = 7
     kRearRightTurningCanId = 8
 
+    # CANCoder IDs
+    kFrontLeftCancoderID = 17
+    kRearLeftCancoderID = 15
+    kFrontRightCancoderID = 16
+    kRearRightCancoderID = 18
+
+    kGryoCanID = 13
     kGyroReversed = -1  # can be +1 if not flipped (affects field-relative driving)
 
 
