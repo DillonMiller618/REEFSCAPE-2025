@@ -1,13 +1,14 @@
+import math
+
 from rev import SparkMax, SparkLowLevel, SparkBase
 from wpimath.geometry import Rotation2d
+from wpilib import DriverStation
 from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
 #from phoenix6.hardware.cancoder import CANcoder
 from phoenix5.sensors import CANCoder
+from phoenix5.sensors import CANCoderConfiguration
 
 from constants import ModuleConstants, getSwerveDrivingMotorConfig, getSwerveTurningMotorConfig
-
-cancoder = CANCoder(1, "rio")
-
 
 class MAXSwerveModule:
     def __init__(
@@ -35,6 +36,7 @@ class MAXSwerveModule:
         self.turningSparkMax = motorControllerType(
             turningCANId, SparkLowLevel.MotorType.kBrushless
         )
+        self.cancoder = CANCoder(encoderCANId)
 
         # Factory reset, so we get the SPARKS MAX to a known state before configuring
         # them. This is useful in case a SPARK MAX is swapped out.
@@ -47,10 +49,18 @@ class MAXSwerveModule:
             getSwerveTurningMotorConfig(turnMotorInverted),
             SparkBase.ResetMode.kResetSafeParameters,
             SparkBase.PersistMode.kPersistParameters)
+        
+
+        # Configuring the Cancoder
+        #problem area
+        CANCoderConfiguration.sensorCoefficient = 2 * math.pi / 4096.0
+        CANCoderConfiguration.unitString = "rad"
+        self.cancoder.configAllSettings(CANCoderConfiguration)
+    
 
         # Setup encoders and PID controllers for the driving and turning SPARKS MAX.
         self.drivingEncoder = self.drivingSparkMax.getEncoder()
-        self.turningEncoder = CANCoder(encoderCANId, "rio") # TODO: tie other things into this properly
+        self.turningEncoder = self.cancoder # TODO: tie other things into this properly
 
         self.drivingPIDController = self.drivingSparkMax.getClosedLoopController()
         self.turningPIDController = self.turningSparkMax.getClosedLoopController()
@@ -68,7 +78,7 @@ class MAXSwerveModule:
         # relative to the chassis.
         return SwerveModuleState(
             self.drivingEncoder.getVelocity(),
-            Rotation2d(self.turningEncoder.get_absolute_position() - self.chassisAngularOffset),
+            Rotation2d(self.turningEncoder.getAbsolutePosition() - self.chassisAngularOffset),
         )
 
     def getPosition(self) -> SwerveModulePosition:
@@ -78,9 +88,10 @@ class MAXSwerveModule:
         """
         # Apply chassis angular offset to the encoder position to get the position
         # relative to the chassis.
+        # problem
         return SwerveModulePosition(
             self.drivingEncoder.getPosition(),
-            Rotation2d(self.turningEncoder.getPosition() - self.chassisAngularOffset),
+            Rotation2d(self.turningEncoder.getAbsolutePosition() - self.chassisAngularOffset),
         )
 
     def setDesiredState(self, desiredState: SwerveModuleState) -> None:
@@ -107,7 +118,7 @@ class MAXSwerveModule:
         # Optimize the reference state to avoid spinning further than 90 degrees.
         optimizedDesiredState = correctedDesiredState
         SwerveModuleState.optimize(
-            optimizedDesiredState, Rotation2d(self.turningEncoder.getPosition())
+            optimizedDesiredState, Rotation2d(self.turningEncoder.getAbsolutePosition())
         )
 
         # Command driving and turning SPARKS MAX towards their respective setpoints.
@@ -125,7 +136,7 @@ class MAXSwerveModule:
         Stops the module in place to conserve energy and avoid unnecessary brownouts
         """
         self.drivingPIDController.setReference(0, SparkLowLevel.ControlType.kVelocity)
-        self.turningPIDController.setReference(self.turningEncoder.getPosition(), SparkLowLevel.ControlType.kPosition)
+        self.turningPIDController.setReference(self.turningEncoder.getAbsolutePosition(), SparkLowLevel.ControlType.kPosition)
 
     def resetEncoders(self) -> None:
         """
