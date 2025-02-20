@@ -51,6 +51,13 @@ class DriveConstants:
     # the robot, rather the allowed maximum speeds
     kMaxSpeedMetersPerSecond = 4.8
     kMaxAngularSpeed = math.tau  # radians per second
+    kWheelDiameter = 4
+    kWheelCircumference = kWheelDiameter * math.pi
+    kDriveGearRatio = 6.12
+    kAngleGearRatio = 21.43
+
+    dPositionConversionFactor = kWheelCircumference / kDriveGearRatio
+    dVelocityConversionFactor = dPositionConversionFactor / 60
 
     kDirectionSlewRate = 1.2  # radians per second
     kMagnitudeSlewRate = 1.8  # percent per second (1 = 100%)
@@ -80,8 +87,8 @@ class DriveConstants:
     kBackRightChassisAngularOffset = math.pi / 2
 
     # SPARK MAX CAN IDs
-    kFrontLeftDrivingCanId = 6
-    kRearLeftDrivingCanId = 8
+    kFrontLeftDrivingCanId = 4
+    kRearLeftDrivingCanId = 2
     kFrontRightDrivingCanId = 1
     kRearRightDrivingCanId = 3
 
@@ -98,6 +105,29 @@ class DriveConstants:
 
     kGryoCanID = 13
     kGyroReversed = -1  # can be +1 if not flipped (affects field-relative driving)
+
+    # PIDs
+    kSnapControllerPID = [0.051, 0, 0] #snap speed of mk4is
+    kTurretControllerPID = [0.08, 0, 0.0001] #idk
+    kCLTControllerPID = [0.04, 0, 0] #closed look turning controller consts
+    ob_drive_pid = [0.5, 0, 0, 1 / units.feetToMeters(16.6)]
+    ob_steer_pid = [1, 0, 0, 0]
+
+    # Physical offsets
+    # Cancoders
+    kFrontLeftZeroOffset = -100 #placeholder
+    kRearLeftZeroOffset = -100
+    kFrontRightZeroOffset = -100
+    kRearRightZeroOffset = -100
+    """
+    m_FL_location = Translation2d(0.52705 / 2, 0.52705 / 2)
+    m_FR_location = Translation2d(0.52705 / 2, -0.52705 / 2)
+    m_BL_location = Translation2d(-0.52705 / 2, 0.52705 / 2)
+    m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
+    m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
+    """
+
+
 
 
 def getSwerveDrivingMotorConfig() -> SparkBaseConfig:
@@ -207,9 +237,10 @@ class AutoConstants:
     kMaxAngularSpeedRadiansPerSecond = math.pi
     kMaxAngularSpeedRadiansPerSecondSquared = math.pi
 
-    kPXController = 1
-    kPYController = 1
-    kPThetaController = 1
+    kPXController = 5.0
+    kIXController = 0
+    kDXController = 0
+    kPThetaController = 5.0
 
     # Constraint for the motion profiled robot angle controller
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(

@@ -7,7 +7,7 @@ from wpimath.kinematics import SwerveModulePosition
 class PoseEstimator:
     def __init__(self):
         super().__init__()
-        self.estimator = SwerveDrive4PoseEstimator(DriveConstants.m_kinematics,
+        self.estimator = SwerveDrive4PoseEstimator(DriveConstants.kDriveKinematics,
                                                    Rotation2d.fromDegrees(0),
                                                    (SwerveModulePosition(0, Rotation2d(0)),
                                                     SwerveModulePosition(0, Rotation2d(0)),

@@ -9,7 +9,7 @@ import typing
 from commands2 import cmd, InstantCommand, RunCommand
 from commands2.button import JoystickButton
 from wpilib import RobotController
-from wpilib import PS4Controller
+from wpilib import PS4Controller, Timer
 from wpimath.controller import PIDController, ProfiledPIDControllerRadians, HolonomicDriveController
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.trajectory import TrajectoryConfig, TrajectoryGenerator
@@ -18,6 +18,8 @@ from constants import AutoConstants, DriveConstants, OIConstants
 from subsystems.drivesubsystem import DriveSubsystem
 
 from commands.reset_xy import ResetXY, ResetSwerveFront
+
+from helpers.pose_estimator import PoseEstimator
 
 class RobotContainer:
     """
@@ -68,12 +70,14 @@ class RobotContainer:
         and then passing it to a JoystickButton.
         """
 
-        xButton = JoystickButton(self.driverController, PS4Controller.Button.kSquare)
-        xButton.onTrue(ResetXY(x=0.0, y=0.0, headingDegrees=0.0, drivetrain=self.robotDrive))
-        xButton.whileTrue(RunCommand(self.robotDrive.setX, self.robotDrive))  # use the swerve X brake when "X" is pressed
 
-        yButton = JoystickButton(self.driverController, PS4Controller.Button.kTriangle)
-        yButton.onTrue(ResetSwerveFront(self.robotDrive))
+        # TODO: fix this later
+        #xButton = JoystickButton(self.driverController, PS4Controller.Button.kSquare)
+        #xButton.onTrue(ResetXY(x=0.0, y=0.0, headingDegrees=0.0, drivetrain=self.robotDrive))
+        #xButton.whileTrue(RunCommand(self.robotDrive.setX, self.robotDrive))  # use the swerve X brake when "X" is pressed
+
+        #yButton = JoystickButton(self.driverController, PS4Controller.Button.kTriangle)
+        #yButton.onTrue(ResetSwerveFront(self.robotDrive))
 
     def disablePIDSubsystems(self) -> None:
         """Disables all ProfiledPIDSubsystem and PIDSubsystem instances.

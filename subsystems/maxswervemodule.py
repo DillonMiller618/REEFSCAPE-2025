@@ -1,132 +1,134 @@
+from rev import SparkMax, SparkLowLevel, SparkBase
 from wpimath.geometry import Rotation2d
-from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
-from rev import SparkMax
-from phoenix5.sensors import CANCoder, AbsoluteSensorRange, CANCoderStatusFrame
-from constants import DriveConstants
-import math
+from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
+#from phoenix6.hardware.cancoder import CANcoder
+from phoenix5.sensors import CANCoder
+
+from constants import ModuleConstants, getSwerveDrivingMotorConfig, getSwerveTurningMotorConfig
+
+cancoder = CANCoder(1, "rio")
 
 
-class SwerveModule:
-
-    def __init__(self, dm_id: int, sm_id: int, enc_id: int, mod_offset: float, drive_invert: bool, steer_invert: bool):
+class MAXSwerveModule:
+    def __init__(
+        self,
+        drivingCANId: int,
+        turningCANId: int,
+        encoderCANId: int,
+        chassisAngularOffset: float,
+        turnMotorInverted = True,
+        motorControllerType = SparkMax,
+    ) -> None:
+        """Constructs a MAXSwerveModule and configures the driving and turning motor,
+        encoder, and PID controller. This configuration is specific to the REV
+        MAXSwerve Module built with NEOs, SPARKS MAX, and a Through Bore
+        Encoder.
         """
-        dm_id: Drive motor CAN ID, int.
-        sm_id: Steer motor CAN ID, int.
-        enc_id: Absolute encoder CAN ID, int.
-        mod_offset: For Phoenix5 CANCoder setup, float. <- Scheduled to be deprecated.
-        drive_invert: Boolean for inverting drive motor, True/False.
-        steer_invert: Boolean for inverting steer motor, True/False.
+        self.chassisAngularOffset = 0
+        self.desiredState = SwerveModuleState(0.0, Rotation2d())
+
+
+        # Declares each motor as brushless, sparkmaxes (see above), and gets canid from constants file
+        self.drivingSparkMax = motorControllerType(
+            drivingCANId, SparkLowLevel.MotorType.kBrushless
+        )
+        self.turningSparkMax = motorControllerType(
+            turningCANId, SparkLowLevel.MotorType.kBrushless
+        )
+
+        # Factory reset, so we get the SPARKS MAX to a known state before configuring
+        # them. This is useful in case a SPARK MAX is swapped out.
+        self.drivingSparkMax.configure(
+            getSwerveDrivingMotorConfig(),
+            SparkBase.ResetMode.kResetSafeParameters,
+            SparkBase.PersistMode.kPersistParameters)
+
+        self.turningSparkMax.configure(
+            getSwerveTurningMotorConfig(turnMotorInverted),
+            SparkBase.ResetMode.kResetSafeParameters,
+            SparkBase.PersistMode.kPersistParameters)
+
+        # Setup encoders and PID controllers for the driving and turning SPARKS MAX.
+        self.drivingEncoder = self.drivingSparkMax.getEncoder()
+        self.turningEncoder = CANCoder(encoderCANId, "rio") # TODO: tie other things into this properly
+
+        self.drivingPIDController = self.drivingSparkMax.getClosedLoopController()
+        self.turningPIDController = self.turningSparkMax.getClosedLoopController()
+        
+        self.chassisAngularOffset = chassisAngularOffset
+        self.desiredState.angle = Rotation2d(self.turningEncoder.getAbsolutePosition()) #idk abt this
+        self.drivingEncoder.setPosition(0)
+
+    def getState(self) -> SwerveModuleState:
+        """Returns the current state of the module.
+
+        :returns: The current state of the module.
         """
-        # Connect the passed items to default variables.
-        self.drive_motor = SparkMax(dm_id, SparkMax.MotorType.kBrushless)
-        self.steer_motor = SparkMax(sm_id, SparkMax.MotorType.kBrushless)
-        self.encoder = CANCoder(enc_id, "rio")
-        self.drive_encoder = self.drive_motor.getEncoder()
+        # Apply chassis angular offset to the encoder position to get the position
+        # relative to the chassis.
+        return SwerveModuleState(
+            self.drivingEncoder.getVelocity(),
+            Rotation2d(self.turningEncoder.get_absolute_position() - self.chassisAngularOffset),
+        )
 
-        # Set several config items relating to encoders.
-        self.drive_encoder.setVelocityConversionFactor(DriveConstants.d_velocity_conversion_factor)
-        self.drive_encoder.setPositionConversionFactor(DriveConstants.d_position_conversion_factor)
+    def getPosition(self) -> SwerveModulePosition:
+        """Returns the current position of the module.
 
-        self.encoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 20)
-        self.encoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, 20)
-        self.encoder.setPositionToAbsolute()
-        self.encoder.configMagnetOffset(mod_offset)
-        self.encoder.configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180)
+        :returns: The current position of the module.
+        """
+        # Apply chassis angular offset to the encoder position to get the position
+        # relative to the chassis.
+        return SwerveModulePosition(
+            self.drivingEncoder.getPosition(),
+            Rotation2d(self.turningEncoder.getPosition() - self.chassisAngularOffset),
+        )
 
-        # Invert motors based on the passthrough on instantiation.
-        self.drive_motor.setInverted(drive_invert)
-        self.steer_motor.setInverted(steer_invert)
+    def setDesiredState(self, desiredState: SwerveModuleState) -> None:
+        """Sets the desired state for the module.
 
-        self.drive_pid = self.drive_motor.getPIDController()
-        self.drive_pid.setP(DriveConstants.ob_drive_pid[0])
-        self.drive_pid.setI(DriveConstants.ob_drive_pid[1])
-        self.drive_pid.setD(DriveConstants.ob_drive_pid[2])
-        self.drive_pid.setFF(DriveConstants.ob_drive_pid[3])
+        :param desiredState: Desired state with speed and angle.
 
-        self.steer_enc = self.steer_motor.getEncoder()
-        self.steer_enc.setPositionConversionFactor(1 / 21.42857)
-        self.set_relative_start()
-        self.steer_pid = self.steer_motor.getPIDController()
-        self.steer_pid.setP(DriveConstants.ob_steer_pid[0])
-        self.steer_pid.setI(DriveConstants.ob_steer_pid[1])
-        self.steer_pid.setD(DriveConstants.ob_steer_pid[2])
-        self.steer_pid.setFF(DriveConstants.ob_steer_pid[3])
+        """
+        if abs(desiredState.speed) < ModuleConstants.kDrivingMinSpeedMetersPerSecond:
+            # if WPILib doesn't want us to move at all, don't bother to bring the wheels back to zero angle yet
+            # (causes brownout protection when battery is lower: https://youtu.be/0Xi9yb1IMyA)
+            is_x_brake = abs(abs(desiredState.angle.degrees()) - 45) < 0.01
+            if not is_x_brake:
+                self.stop()
+                return
 
-        # Set additional constraints on each SPARK MAX controller, including open & closed loop ramp rates, current
-        # limits, and idle mode. Then burn to flash memory on each controller.
-        self.steer_motor.setClosedLoopRampRate(DriveConstants.closed_loop_ramp)
-        self.steer_motor.setOpenLoopRampRate(DriveConstants.open_loop_ramp)
-        self.drive_motor.setClosedLoopRampRate(DriveConstants.closed_loop_ramp)
-        self.drive_motor.setOpenLoopRampRate(DriveConstants.open_loop_ramp)
-        self.steer_motor.setSmartCurrentLimit(DriveConstants.azimuth_current_limit)
-        self.drive_motor.setSmartCurrentLimit(DriveConstants.drive_current_limit)
-        self.steer_motor.setIdleMode(SparkMax.IdleMode.kBrake)
-        self.drive_motor.setIdleMode(SparkMax.IdleMode.kBrake)
-        self.steer_motor.burnFlash()
-        self.drive_motor.burnFlash()
+        # Apply chassis angular offset to the desired state.
+        correctedDesiredState = SwerveModuleState()
+        correctedDesiredState.speed = desiredState.speed
+        correctedDesiredState.angle = desiredState.angle + Rotation2d(
+            self.chassisAngularOffset
+        )
 
-    def degree_to_steer(self, angle: Rotation2d) -> float:
-        """Convert a value from 0 to 360 to a value from 0 to 1."""
-        return angle.radians() / (2 * math.pi)
+        # Optimize the reference state to avoid spinning further than 90 degrees.
+        optimizedDesiredState = correctedDesiredState
+        SwerveModuleState.optimize(
+            optimizedDesiredState, Rotation2d(self.turningEncoder.getPosition())
+        )
 
-    def set_desired_state_onboard(self, desired_state: SwerveModuleState):
-        """Set a desired swerve module state for SPARK MAXes."""
-        state = self.optimize_onboard(desired_state)
+        # Command driving and turning SPARKS MAX towards their respective setpoints.
+        self.drivingPIDController.setReference(
+            optimizedDesiredState.speed, SparkLowLevel.ControlType.kVelocity
+        )
+        self.turningPIDController.setReference(
+            optimizedDesiredState.angle.radians(), SparkLowLevel.ControlType.kPosition
+        )
 
-        if 0 < self.degree_to_steer(state.angle) <= 0.25 and 0.75 <= self.steer_enc.getPosition() % 1 < 1:
-            wrap_add = 1
-        elif 0 < self.steer_enc.getPosition() % 1 <= 0.25 and 0.75 <= self.degree_to_steer(state.angle) < 1:
-            wrap_add = -1
-        else:
-            wrap_add = 0
+        self.desiredState = desiredState
 
-        angle_mod = self.degree_to_steer(state.angle) + math.trunc(self.steer_enc.getPosition()) + wrap_add
-        self.drive_pid.setReference(state.speed, SparkMax.ControlType.kVelocity)
-        self.steer_pid.setReference(angle_mod, SparkMax.ControlType.kPosition)
+    def stop(self):
+        """
+        Stops the module in place to conserve energy and avoid unnecessary brownouts
+        """
+        self.drivingPIDController.setReference(0, SparkLowLevel.ControlType.kVelocity)
+        self.turningPIDController.setReference(self.turningEncoder.getPosition(), SparkLowLevel.ControlType.kPosition)
 
-    def reset_encoders(self):
-        """Reset the drive encoder to its zero position."""
-        self.drive_encoder.setPosition(0)
-
-    def set_relative_start(self):
-        """Preset the relative encoder on steering SPARK MAXes."""
-        signed180input = self.encoder.getAbsolutePosition()
-        if signed180input < 0:
-            signed180input += 360
-
-        self.steer_enc.setPosition((signed180input / 360) + 5)
-
-    def get_current_draw(self) -> [float, float]:
-        """Returns a list of the drive and steering motor current draws."""
-        return [self.drive_motor.getOutputCurrent(), self.steer_motor.getOutputCurrent()]
-
-    def get_state_onboard(self) -> SwerveModuleState:
-        """Returns the current swerve module state."""
-        return SwerveModuleState(self.drive_encoder.getVelocity(),
-                                 Rotation2d((self.steer_enc.getPosition() % 1) * math.pi * 2))
-
-    def get_position_onboard(self) -> SwerveModulePosition:
-        return SwerveModulePosition(self.drive_encoder.getPosition(),
-                                    Rotation2d((self.steer_enc.getPosition() % 1) * math.pi * 2))
-
-    def optimize_onboard(self, desired_state: SwerveModuleState):
-        inverted = False
-        desired_degrees = desired_state.angle.degrees()
-        if desired_degrees < 0:
-            desired_degrees += 360  # converts desired degrees to 360
-
-        current_degrees = (self.steer_enc.getPosition() % 1) * 360  # converts current to 360
-
-        if 90.0 < abs(current_degrees - desired_degrees) <= 270.0:
-            inverted = True
-            if desired_degrees > 180:
-                desired_degrees -= 180
-            else:
-                desired_degrees += 180
-
-        magnitude = desired_state.speed
-
-        if inverted:
-            magnitude *= -1
-
-        return SwerveModuleState(magnitude, Rotation2d.fromDegrees(desired_degrees))
+    def resetEncoders(self) -> None:
+        """
+        Zeroes all the SwerveModule encoders.
+        """
+        self.drivingEncoder.setPosition(0)
