@@ -87,15 +87,15 @@ class DriveConstants:
     kBackRightChassisAngularOffset = math.pi / 2
 
     # SPARK MAX CAN IDs
-    kFrontLeftDrivingCanId = 4
-    kRearLeftDrivingCanId = 2
+    kFrontLeftDrivingCanId = 6
+    kRearLeftDrivingCanId = 8
     kFrontRightDrivingCanId = 1
     kRearRightDrivingCanId = 3
 
-    kFrontLeftTurningCanId = 5
-    kRearLeftTurningCanId = 6
-    kFrontRightTurningCanId = 7
-    kRearRightTurningCanId = 8
+    kFrontLeftTurningCanId = 2
+    kRearLeftTurningCanId = 4
+    kFrontRightTurningCanId = 5
+    kRearRightTurningCanId = 7
 
     # CANCoder IDs
     kFrontLeftCancoderID = 17
@@ -107,9 +107,9 @@ class DriveConstants:
     kGyroReversed = -1  # can be +1 if not flipped (affects field-relative driving)
 
     # PIDs
-    kSnapControllerPID = [0.051, 0, 0] #snap speed of mk4is
-    kTurretControllerPID = [0.08, 0, 0.0001] #idk
-    kCLTControllerPID = [0.04, 0, 0] #closed look turning controller consts
+    snap_controller_PID = [0.051, 0, 0] #snap speed of mk4is
+    turret_controller_PID = [0.08, 0, 0.0001] #idk
+    clt_controller_PID = [0.04, 0, 0] #closed look turning controller consts
     ob_drive_pid = [0.5, 0, 0, 1 / units.feetToMeters(16.6)]
     ob_steer_pid = [1, 0, 0, 0]
 
