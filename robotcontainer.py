@@ -15,7 +15,7 @@ from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.trajectory import TrajectoryConfig, TrajectoryGenerator
 
 from constants import AutoConstants, DriveConstants, OIConstants
-from subsystems.drivesubsystem import DriveSubsystem
+from subsystems.drivesubsystem2 import DriveSubsystem
 
 from commands.reset_xy import ResetXY, ResetSwerveFront
 
@@ -30,8 +30,13 @@ class RobotContainer:
     """
 
     def __init__(self) -> None:
+        # Initialize some things
+        self.timer = Timer()
+        self.timer.start()
+        self.poseEstimator = PoseEstimator()
+
         # The robot's subsystems
-        self.robotDrive = DriveSubsystem()
+        self.robotDrive = DriveSubsystem(self.timer, self.poseEstimator)
 
         # The driver's controller
         self.driverController = wpilib.PS4Controller(OIConstants.kDriverControllerPort)
@@ -71,9 +76,9 @@ class RobotContainer:
         """
 
 
-        xButton = JoystickButton(self.driverController, PS4Controller.Button.kSquare)
-        xButton.onTrue(ResetXY(x=0.0, y=0.0, headingDegrees=0.0, drivetrain=self.robotDrive))
-        xButton.whileTrue(RunCommand(self.robotDrive.setX, self.robotDrive))  # use the swerve X brake when "X" is pressed
+        #xButton = JoystickButton(self.driverController, PS4Controller.Button.kSquare)
+        #xButton.onTrue(ResetXY(x=0.0, y=0.0, headingDegrees=0.0, drivetrain=self.robotDrive))
+        #xButton.whileTrue(RunCommand(self.robotDrive.drive_lock(), self.robotDrive))  # use the swerve X brake when "X" is pressed
 
         yButton = JoystickButton(self.driverController, PS4Controller.Button.kTriangle)
         yButton.onTrue(ResetSwerveFront(self.robotDrive))

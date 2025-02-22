@@ -13,7 +13,6 @@ from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.controller import PPHolonomicDriveController
 from pathplannerlib.config import RobotConfig, PIDConstants
 from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
-from pathplannerlib.commands import FollowPathHolonomic, PathfindHolonomic
 from pathplannerlib.logging import PathPlannerLogging
 from helpers.pose_estimator import PoseEstimator
 
@@ -88,7 +87,7 @@ class DriveSubsystem(commands2.Subsystem):
                 PIDConstants(AutoConstants.kPXController, AutoConstants.kIXController, AutoConstants.kDXController),
                 PIDConstants(AutoConstants.kPThetaController, 0, 0),
             ),
-            self.config(),
+            self.config,
             self.get_path_flip(),
             self
         )
@@ -290,7 +289,7 @@ class DriveSubsystem(commands2.Subsystem):
     def set_module_states(self, desired_states) -> None:
         """Set swerve module states given a list of target states. If in debug mode, inform the dashboard of the
         targeted states."""
-        desired_states = SwerveDrive4Kinematics.desaturateWheelSpeeds(desired_states, DriveConstants.kMaxSpeed)
+        desired_states = SwerveDrive4Kinematics.desaturateWheelSpeeds(desired_states, DriveConstants.kMaxSpeedMetersPerSecond)
         self.m_FL.set_desired_state_onboard(desired_states[0])
         self.m_FR.set_desired_state_onboard(desired_states[1])
         self.m_BL.set_desired_state_onboard(desired_states[2])
@@ -327,11 +326,11 @@ class DriveSubsystem(commands2.Subsystem):
 
     def zero_heading(self) -> None:
         """Reset robot absolute heading to zero. WARNING: DO NOT USE."""
-        self.gyro.set_yaw(0)
+        self.gyro.reset()
 
     def get_heading(self) -> Rotation2d:
         """Retrieve robot heading directly from the IMU."""
-        return self.gyro.get_yaw()
+        return self.gyro.getRotation2d()
 
     def get_heading_odo(self) -> Rotation2d:
         """Returns the pose estimator's estimated robot heading."""
@@ -393,7 +392,7 @@ class DriveSubsystem(commands2.Subsystem):
         else:
             return False
 
-    def follow_path_command(self, target_location: []) -> PPHolonomicDriveController:
+    def follow_path_command(self, target_location: list) -> PPHolonomicDriveController:
         """Transforms a set of target coordinates and an end rotation state into a parth following command."""
         bezier_points = PathPlannerPath.bezierFromPoses([
             self.get_pose(),
@@ -413,8 +412,8 @@ class DriveSubsystem(commands2.Subsystem):
             AutoBuilder.configure(
                 PIDConstants(AutoConstants.kPXController, 0, 0),
                 PIDConstants(AutoConstants.kPThetaController, 0, 0),
-                AutoConstants.max_module_speed,
-                AutoConstants.module_radius_from_center,
+                DriveConstants.kMaxSpeedMetersPerSecond,
+                AutoConstants.kModuleRadiusFromCenter,
                 PPHolonomicDriveController(
                     PIDConstants(AutoConstants.kPXController, AutoConstants.kIXController, AutoConstants.kDXController),
                     PIDConstants(AutoConstants.kPThetaController, 0, 0)
@@ -425,22 +424,22 @@ class DriveSubsystem(commands2.Subsystem):
             self
         )
     
-    def pathfind(self, target_location: []):
+    def pathfind(self, target_location: list):
         target_pose = Pose2d(target_location[0], target_location[1], Rotation2d.fromDegrees(target_location[2]))
 
         constraints = PathConstraints(3, 4, 9.424, 12.567)
 
-        return PathfindHolonomic(
+        return AutoBuilder.followPath(
             constraints,
             self.get_pose,
             self.get_chassis_speeds,
             self.drive_by_chassis_speeds,
-            HolonomicPathFollowerConfig(
+            AutoBuilder.configure(
                 PIDConstants(AutoConstants.kPXController, 0, 0),
                 PIDConstants(AutoConstants.kPThetaController, 0, 0),
-                AutoConstants.max_module_speed,
-                AutoConstants.module_radius_from_center,
-                ReplanningConfig()
+                DriveConstants.kMaxSpeedMetersPerSecond,
+                AutoConstants.kModuleRadiusFromCenter,
+                RobotConfig()
             ),
             lambda: False,
             self,
@@ -474,6 +473,8 @@ class DriveSubsystem(commands2.Subsystem):
 
         return ax, ay, alpha
 
+
+    # TODO: Gyro part is broken rn
     def turret_drive(self, x_speed: float, y_speed: float, heading_target: float) -> None:
         """
         Calculate and implement the PID controller for rotating to and maintaining a target heading.
@@ -509,7 +510,7 @@ class DriveSubsystem(commands2.Subsystem):
         start_time = self.timer.get()
 
         # Update the pose estimator and pose display with any changes in robot state.
-        self.pose_estimator.update_odometry(Rotation2d.fromDegrees(self.get_heading()),
+        self.pose_estimator.update_odometry(self.get_heading(),
                                             self.m_FL.get_position_onboard(),
                                             self.m_FR.get_position_onboard(),
                                             self.m_BL.get_position_onboard(),
@@ -555,3 +556,5 @@ class DriveSubsystem(commands2.Subsystem):
             SmartDashboard.putNumber("BR Speed", abs(self.m_BR.get_state_onboard().speed))
             SmartDashboard.putData("Snap Controller", self.snap_controller)
             SmartDashboard.putData("CLT Controller", self.clt_controller)
+
+# Legacy methods

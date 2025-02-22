@@ -6,7 +6,6 @@ from rev import SparkMax, SparkLowLevel, SparkBase
 from wpimath.geometry import Rotation2d
 from wpilib import DriverStation
 from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
-#from phoenix6.hardware.cancoder import CANcoder
 from phoenix5.sensors import CANCoder, CANCoderStatusFrame, AbsoluteSensorRange
 from phoenix5.sensors import CANCoderConfiguration
 
@@ -84,7 +83,7 @@ class MAXSwerveModule:
         # relative to the chassis.
         return SwerveModuleState(
             self.drivingEncoder.getVelocity(),
-            Rotation2d(self.turningEncoder.getAbsolutePosition() - self.chassisAngularOffset),
+            Rotation2d(self.encoder.getAbsolutePosition() - self.chassisAngularOffset),
         )
     
 
@@ -98,7 +97,7 @@ class MAXSwerveModule:
         # problem
         return SwerveModulePosition(
             self.drivingEncoder.getPosition(),
-            Rotation2d(self.turningEncoder.getAbsolutePosition() - self.chassisAngularOffset),
+            Rotation2d(self.encoder.getAbsolutePosition() - self.chassisAngularOffset),
         )
 
     def setDesiredState(self, desiredState: SwerveModuleState) -> None:
@@ -125,7 +124,7 @@ class MAXSwerveModule:
         # Optimize the reference state to avoid spinning further than 90 degrees.
         optimizedDesiredState = correctedDesiredState
         SwerveModuleState.optimize(
-            optimizedDesiredState, Rotation2d(self.turningEncoder.getAbsolutePosition())
+            optimizedDesiredState, Rotation2d(self.encoder.getAbsolutePosition())
         )
 
         # Command driving and turning SPARKS MAX towards their respective setpoints.
@@ -143,7 +142,7 @@ class MAXSwerveModule:
         Stops the module in place to conserve energy and avoid unnecessary brownouts
         """
         self.drivingPIDController.setReference(0, SparkLowLevel.ControlType.kVelocity)
-        self.turningPIDController.setReference(self.turningEncoder.getAbsolutePosition(), SparkLowLevel.ControlType.kPosition)
+        self.turningPIDController.setReference(self.encoder.getAbsolutePosition(), SparkLowLevel.ControlType.kPosition)
 
     def resetEncoders(self) -> None:
         """
