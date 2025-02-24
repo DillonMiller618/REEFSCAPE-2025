@@ -1,349 +1,142 @@
 import math
-import time
+from typing import Union
 
-from rev import SparkBaseConfig, SparkMax, SparkLowLevel, SparkMaxConfig, SparkBase
-
-from phoenix6.hardware import CANcoder
-from phoenix6.configs.config_groups import MagnetSensorConfigs
-from phoenix6.signals import SensorDirectionValue
-
-from commands2 import Subsystem
-
-from ntcore import NetworkTableInstance, EventFlags, Event, ValueEventData
-
-from wpilib import RobotBase
-from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
-from wpimath.units import (
-    inchesToMeters,
-    meters_per_second,
-    meters_per_second_squared,
-    feetToMeters,
-)
+from wpimath.units import degreesToRadians
+from rev import SparkMax, SparkLowLevel, SparkBase
 from wpimath.geometry import Rotation2d
-from wpimath.controller import ProfiledPIDController
-from wpimath.filter import SlewRateLimiter
-from wpimath.trajectory import TrapezoidProfile
+from wpilib import DriverStation
+from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
+#from phoenix6.hardware.cancoder import CANcoder
+from phoenix5.sensors import CANCoder, CANCoderStatusFrame, AbsoluteSensorRange
+from phoenix5.sensors import CANCoderConfiguration
 
-module_offsets = {
-    "fl": 0.08544921875,
-    "fr": -0.37451171875,
-    "bl": 0.15283203125,
-    "br": -0.140625,
-}
+from constants import ModuleConstants, getSwerveDrivingMotorConfig, getSwerveTurningMotorConfig
 
-
-class SwerveModule(Subsystem):
+class SwerveModule:
     def __init__(
         self,
-        name: str,
-        drive_id: int,
-        turn_id: int,
-        cancoder_id: int,
-        drive_inverted: bool,
-        turn_inverted: bool,
-        max_velocity: meters_per_second,
-        max_accel: meters_per_second_squared,
-    ):
-        self.is_real = RobotBase.isReal()
+        drivingCANId: int,
+        turningCANId: int,
+        encoderCANId: int,
+        chassisAngularOffset: float,
+        turnMotorInverted: True,
+        motorControllerType = SparkMax
+    ) -> None:
+        """Constructs a MAXSwerveModule and configures the driving and turning motor,
+        encoder, and PID controller. This configuration is specific to the REV
+        MAXSwerve Module built with NEOs, SPARKS MAX, and a Through Bore
+        Encoder.
+        """
+        self.chassisAngularOffset = 0
+        self.desiredState = SwerveModuleState(0.0, Rotation2d())
 
-        # cancoder
-        self.cancoder = CANcoder(cancoder_id)
-        self.cancoder.configurator.apply(
-            MagnetSensorConfigs()
-            .with_sensor_direction(SensorDirectionValue.COUNTER_CLOCKWISE_POSITIVE)
-            .with_absolute_sensor_discontinuity_point(0.5)
-            .with_magnet_offset(module_offsets[name])
+
+        # Declares each motor as brushless, sparkmaxes (see above), and gets canid from constants file
+        self.drivingSparkMax = motorControllerType(
+            drivingCANId, SparkLowLevel.MotorType.kBrushless
         )
-
-        self.cancoder.optimize_bus_utilization()
-        self.cancoder.get_absolute_position().set_update_frequency(100)
-
-        time.sleep(0.1)
-
-        self.name = name
-        self.setName(name)
-
-        # drive
-        self.drive_motor = SparkMax(drive_id, SparkLowLevel.MotorType.kBrushless)
-        self.drive_encoder = self.drive_motor.getEncoder()
-        self.drive_pid = ProfiledPIDController(
-            0.35, 0, 0.0075, TrapezoidProfile.Constraints(max_velocity, max_accel * 2)
+        self.turningSparkMax = motorControllerType(
+            turningCANId, SparkLowLevel.MotorType.kBrushless
         )
+        self.encoder = CANCoder(encoderCANId)
+        self.drivingEncoder = self.drivingSparkMax.getEncoder()
 
-        self.drive_motor_config = SparkMaxConfig()
-        self.drive_motor_config.inverted(drive_inverted).smartCurrentLimit(60)
-
-        self.drive_encoder.setPosition(0)
-
-        self.drive_motor_config.signals.absoluteEncoderPositionAlwaysOn(
-            False
-        ).analogVoltageAlwaysOn(False)
-
-        self.drive_motor.configure(
-            self.drive_motor_config,
+        # Factory reset, so we get the SPARKS MAX to a known state before configuring
+        # them. This is useful in case a SPARK MAX is swapped out.
+        self.drivingSparkMax.configure(
+            getSwerveDrivingMotorConfig(),
             SparkBase.ResetMode.kResetSafeParameters,
-            SparkBase.PersistMode.kPersistParameters,
-        )
+            SparkBase.PersistMode.kPersistParameters)
 
-        # turn
-        self.turn_motor = SparkMax(turn_id, SparkLowLevel.MotorType.kBrushless)
-        """
-        the range of error for this controller is [-0.25, 0.25] 
-        """
-        self.turn_pid = ProfiledPIDController(
-            0.01, 0, 0, TrapezoidProfile.Constraints(720, 7200)
-        )
-        self.turn_motor_config = SparkMaxConfig()
-        self.turn_motor_config.inverted(turn_inverted).smartCurrentLimit(40)
+        self.turningSparkMax.configure(
+            getSwerveTurningMotorConfig(turnMotorInverted),
+            SparkBase.ResetMode.kResetSafeParameters,
+            SparkBase.PersistMode.kPersistParameters)
 
-        self.turn_pid.enableContinuousInput(-180, 180)
+        self.encoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 20)
+        self.encoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, 20)
+        self.encoder.setPositionToAbsolute()
+        self.encoder.configMagnetOffset(0)
+        #TODO check this later
+        self.encoder.configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180)
 
-        self.turn_encoder = self.turn_motor.getEncoder()
-        self.turn_encoder.setPosition(
-            self.cancoder.get_absolute_position().value_as_double
-        )
+        #Invert motors based on instantiation
+        self.drivingSparkMax.setInverted(True)
+        self.turningSparkMax.setInverted(False)
 
-        self.turn_motor.configure(
-            self.turn_motor_config,
-            SparkBase.ResetMode.kNoResetSafeParameters,
-            SparkBase.PersistMode.kNoPersistParameters,
-        )
+        self.steeringEncoder = self.turningSparkMax.getEncoder()
+        self.steeringEncoder.setPosition(0)
 
-        # networktables
-        self.nettable = NetworkTableInstance.getDefault().getTable(
-            f"00Swerve/{self.name}"
-        )
+        self.drivingPIDController = self.drivingSparkMax.getClosedLoopController()
+        self.turningPIDController = self.turningSparkMax.getClosedLoopController()
 
-        self.nettable.addListener("driveP", EventFlags.kValueAll, self._nt_pid_listener)
-        self.nettable.addListener("driveI", EventFlags.kValueAll, self._nt_pid_listener)
-        self.nettable.addListener("driveD", EventFlags.kValueAll, self._nt_pid_listener)
-        self.nettable.addListener("turnD", EventFlags.kValueAll, self._nt_pid_listener)
-        self.nettable.addListener("turnI", EventFlags.kValueAll, self._nt_pid_listener)
-        self.nettable.addListener("turnP", EventFlags.kValueAll, self._nt_pid_listener)
 
-        self.nettable.putNumber("driveP", self.drive_pid.getP())
-        self.nettable.putNumber("driveI", self.drive_pid.getI())
-        self.nettable.putNumber("driveD", self.drive_pid.getD())
-        self.nettable.putNumber("turnP", self.turn_pid.getP())
-        self.nettable.putNumber("turnI", self.turn_pid.getI())
-        self.nettable.putNumber("turnD", self.turn_pid.getD())
+        self.chassisAngularOffset = chassisAngularOffset
+        self.desiredState.angle = Rotation2d(degreesToRadians(self.encoder.getAbsolutePosition())) #idk abt this
+        self.drivingEncoder.setPosition(0)
 
-        self.commanded_state = SwerveModuleState(0, Rotation2d(0))
+    def degree_to_steer(self, angle: Rotation2d) -> float:
+        """Convert a value from 0 to 360 to a value from 0 to 1."""
+        return angle.radians() / (2 * math.pi)
 
-        self.last_position: float = 0
-        self.weird_accel = False
+    def set_desired_state_onboard(self, desired_state: SwerveModuleState):
+        """Set a desired swerve module state for SPARK MAXes."""
+        state = self.optimize_onboard(desired_state)
 
-        if not self.is_real:
-            self.drive_pid.setPID(0, 0, 0)
-            self.turn_pid.setPID(0, 0, 0)
-        self.nettable.putBoolean("IsReal", self.is_real)
+        if 0 < self.degree_to_steer(state.angle) <= 0.25 and 0.75 <= self.steeringEncoder.getPosition() % 1 < 1:
+            wrap_add = 1
+        elif 0 < self.steeringEncoder.getPosition() % 1 <= 0.25 and 0.75 <= self.degree_to_steer(state.angle) < 1:
+            wrap_add = -1
+        else:
+            wrap_add = 0
 
-        self.set_drive_idle(False)
-        self.set_turn_idle(True)
+        angle_mod = self.degree_to_steer(state.angle) + math.trunc(self.steeringEncoder.getPosition()) + wrap_add
+        self.drivingPIDController.setReference(state.speed, SparkMax.ControlType.kVelocity)
+        self.turningPIDController.setReference(angle_mod, SparkMax.ControlType.kPosition)
 
-        self.mod_counter = 0
-        self.mod_value = 50
+    def reset_encoders(self):
+        """Reset the drive encoder to its zero position."""
+        self.drivingEncoder.setPosition(0)
 
-    def periodic(self) -> None:
+    def set_relative_start(self):
+        """Preset the relative encoder on steering SPARK MAXes."""
+        signed180input = self.encoder.getAbsolutePosition()
+        if signed180input < 0:
+            signed180input += 360
 
-        self.nettable.putNumber("State/velocity (mps)", self.get_vel())
-        self.nettable.putNumber("State/angle (deg)", self.get_angle().degrees())
-        self.nettable.putNumber(
-            "State/cancoder position (rotation)",
-            self.cancoder.get_absolute_position().value_as_double,
-        )
+        self.steeringEncoder.setPosition((signed180input / 360) + 5)
 
-        self.nettable.putNumber("State/drive position", self.get_distance())
+    def get_current_draw(self) -> Union[float, float]:
+        """Returns a list of the drive and steering motor current draws."""
+        return [self.drivingSparkMax.getOutputCurrent(), self.turningSparkMax.getOutputCurrent()]
 
-        self.nettable.putNumber(
-            "State/max velocity", self.drive_pid.getConstraints().maxVelocity
-        )
-        self.nettable.putNumber(
-            "State/neo rotations", (self.turn_encoder.getPosition() % 1) - 1
-        )
+    def get_state_onboard(self) -> SwerveModuleState:
+        """Returns the current swerve module state."""
+        return SwerveModuleState(self.drivingEncoder.getVelocity(),
+                                 Rotation2d((self.steeringEncoder.getPosition() % 1) * math.pi * 2))
 
-        self.mod_counter = (self.mod_counter + 1) % self.mod_value
-        if self.mod_counter == 0:
-            if (v := self.cancoder.get_absolute_position()).is_all_good():
-                self.turn_encoder.setPosition(v.value_as_double)
+    def get_position_onboard(self) -> SwerveModulePosition:
+        return SwerveModulePosition(self.drivingEncoder.getPosition(),
+                                    Rotation2d((self.steeringEncoder.getPosition() % 1) * math.pi * 2))
+
+    def optimize_onboard(self, desired_state: SwerveModuleState):
+        inverted = False
+        desired_degrees = desired_state.angle.degrees()
+        if desired_degrees < 0:
+            desired_degrees += 360  # converts desired degrees to 360
+
+        current_degrees = (self.steeringEncoder.getPosition() % 1) * 360  # converts current to 360
+
+        if 90.0 < abs(current_degrees - desired_degrees) <= 270.0:
+            inverted = True
+            if desired_degrees > 180:
+                desired_degrees -= 180
             else:
-                self.mod_counter -= 1
+                desired_degrees += 180
 
-    def get_vel(self) -> float:
-        """
-        return the velocity in meters per second
+        magnitude = desired_state.speed
 
-        circumfrence of a circle is 2 * pi * r.
-        The wheel radius of the mk4i is 2in.
-        The gear ratio of the mk4i is 8.14:1
-        """
-        return (
-            self.drive_encoder.getVelocity()
-            * 2
-            * math.pi
-            * inchesToMeters(2)
-            * 8.14
-            / 4096
-        )
+        if inverted:
+            magnitude *= -1
 
-    def get_distance(self) -> float:
-        """return the distance driven by the swerve module since powered on"""
-        return feetToMeters(self.drive_encoder.getPosition() / 8.14)
-
-    def get_angle(self) -> Rotation2d:
-        """return the angle of the swerve module as a Rotation2d
-        This does not work
-        """
-        p = self.cancoder.get_absolute_position()
-        return Rotation2d.fromDegrees(
-            (
-                p.value_as_double
-                if p.is_all_good()
-                else (self.turn_encoder.getPosition() % 1) - 1
-            )
-            * 360
-        )
-
-    def get_state(self) -> SwerveModuleState:
-        """return the velocity and angle of the swerve module"""
-        if not self.is_real:
-            return self.commanded_state
-        return SwerveModuleState(self.get_vel(), self.get_angle())
-
-    def get_position(self) -> SwerveModulePosition:
-        """get the distance driven and angle of the module"""
-        return SwerveModulePosition(self.get_distance(), self.get_angle())
-
-    def set_max_vel(self, max_vel: float) -> None:
-        self.drive_pid.setConstraints(
-            TrapezoidProfile.Constraints(max_vel, max_vel * 5)
-        )
-
-    def set_drive_idle(self, coast: bool) -> None:
-        self.drive_motor_config.setIdleMode(
-            SparkBaseConfig.IdleMode.kCoast
-            if coast
-            else SparkBaseConfig.IdleMode.kBrake
-        )
-        self._configure_drive()
-
-    def set_turn_idle(self, coast: bool) -> None:
-        self.turn_motor_config.setIdleMode(
-            SparkBaseConfig.IdleMode.kCoast
-            if not coast
-            else SparkBaseConfig.IdleMode.kBrake
-        )
-        self._configure_turn()
-
-    def set_state(self, commanded_state: SwerveModuleState) -> None:
-        """command the swerve module to an angle and speed"""
-        # optimize the new state
-        # this just mutates commanded_state in place
-        self.commanded_state = commanded_state
-        commanded_state.optimize(self.get_angle())
-
-        self.nettable.putNumber(
-            "Commanded/Angle (deg)", commanded_state.angle.degrees()
-        )
-
-        self.nettable.putNumber(
-            "State/turn error",
-            -self.get_angle().degrees() + commanded_state.angle.degrees(),
-        )
-
-        turn_speed = self.turn_pid.calculate(
-            self.get_angle().degrees(), commanded_state.angle.degrees()
-        )
-        self.nettable.putNumber("State/Turn Speed (%)", turn_speed)
-        turn_speed = 1 if turn_speed > 1 else -1 if turn_speed < -1 else turn_speed
-        self.turn_motor.set(turn_speed)
-
-        """
-        cosine optimization - make the wheel slower when pointed the wrong direction
-        note that there in no abs over cos because cos(-x) == cos(x)
-        """
-        cos_optimizer = (commanded_state.angle - self.get_angle()).cos()
-        self.nettable.putNumber("Commanded/Speed", commanded_state.speed)
-        self.nettable.putNumber(
-            "Commanded/Optimized Speed", commanded_state.speed * cos_optimizer
-        )
-
-        # if (
-        #     max(commanded_state.speed, self.get_vel())
-        #     - min(commanded_state.speed, self.get_vel())
-        #     > 1.35 * self.drive_pid.getConstraints().maxVelocity
-        #     and not self.weird_accel
-        # ):
-        #     self.drive_pid.setConstraints(
-        #         TrapezoidProfile.Constraints(
-        #             self.drive_pid.getConstraints().maxVelocity,
-        #             self.drive_pid.getConstraints().maxAcceleration * 3,
-        #         )
-        #     )
-        #     self.weird_accel = True
-        # elif (
-        #     max(commanded_state.speed, self.get_vel())
-        #     - min(commanded_state.speed, self.get_vel())
-        #     < 1.25 * self.drive_pid.getConstraints().maxVelocity
-        #     and self.weird_accel
-        # ):
-        #     self.weird_accel = False
-        #     self.drive_pid.setConstraints(
-        #         TrapezoidProfile.Constraints(
-        #             self.drive_pid.getConstraints().maxVelocity,
-        #             self.drive_pid.getConstraints().maxAcceleration / 3,
-        #         )
-        #     )
-
-        drive_speed = self.drive_pid.calculate(
-            self.get_vel(), commanded_state.speed * cos_optimizer
-        )
-        drive_speed = 1 if drive_speed > 1 else -1 if drive_speed < -1 else drive_speed
-        self.nettable.putNumber(
-            "State/change",
-            max(commanded_state.speed, self.get_vel())
-            - min(commanded_state.speed, self.get_vel()),
-        )
-
-        self.drive_motor.set(drive_speed)
-        self.nettable.putNumber("State/Out Drive Speed (%)", drive_speed)
-
-    def _rotation2d_to_rotations(self, angle: Rotation2d) -> float:
-        return angle.degrees() / 360
-
-    def _nt_pid_listener(self, _nt, key: str, event: Event):
-        try:
-            var = key[-1]
-            if isinstance((v := event.data), ValueEventData):
-                if key.startswith("drive"):
-                    if var == "P":
-                        self.drive_pid.setP(v.value.value())
-                    elif var == "I":
-                        self.drive_pid.setI(v.value.value())
-                    elif var == "D":
-                        self.drive_pid.setD(v.value.value())
-                elif key.startswith("turn"):
-                    if var == "P":
-                        self.turn_pid.setP(v.value.value())
-                    elif var == "I":
-                        self.turn_pid.setI(v.value.value())
-                    elif var == "D":
-                        self.turn_pid.setD(v.value.value())
-                else:
-                    print(f"failed at {key}")
-        except Exception:
-            pass
-
-    def _configure_drive(self) -> None:
-        self.drive_motor.configure(
-            self.drive_motor_config,
-            SparkBase.ResetMode.kNoResetSafeParameters,
-            SparkBase.PersistMode.kNoPersistParameters,
-        )
-
-    def _configure_turn(self) -> None:
-        self.turn_motor.configure(
-            self.turn_motor_config,
-            SparkBase.ResetMode.kNoResetSafeParameters,
-            SparkBase.PersistMode.kNoPersistParameters,
-        )
+        return SwerveModuleState(magnitude, Rotation2d.fromDegrees(desired_degrees))
