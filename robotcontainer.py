@@ -47,11 +47,11 @@ class RobotContainer:
 
         # Configure default commands
         self.robotDrive.setDefaultCommand(commands2.cmd.run(
-            lambda: self.robotDrive.drive_2ok(
-                self.driverController.getLeftY() * DriveConstants.kMaxSpeedMetersPerSecond,
-                self.driverController.getLeftX() * DriveConstants.kMaxSpeedMetersPerSecond,
+            lambda: self.robotDrive.drive(
+                0,
+                0,
                 self.driverController.getRightX() * DriveConstants.kMaxAngularSpeed,
-                True
+                True,
             ), self.robotDrive
         ))
 

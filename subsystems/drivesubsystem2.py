@@ -1,5 +1,7 @@
 import math
 from typing import Union
+from wpilib import Timer
+from wpimath.filter import SlewRateLimiter
 from phoenix6.hardware.pigeon2 import Pigeon2
 from phoenix6.configs.pigeon2_configs import Pigeon2Configuration
 import commands2
@@ -15,6 +17,7 @@ from pathplannerlib.config import RobotConfig, PIDConstants
 from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
 from pathplannerlib.logging import PathPlannerLogging
 from helpers.pose_estimator import PoseEstimator
+import swerveutils
 
 
 class DriveSubsystem(commands2.Subsystem):
@@ -48,22 +51,26 @@ class DriveSubsystem(commands2.Subsystem):
                                  DriveConstants.kFrontLeftTurningCanId,
                                  DriveConstants.kFrontLeftCancoderID,
                                  DriveConstants.kFrontLeftZeroOffset,
+                                 True,
                                  True)
         self.m_FR = SwerveModule(DriveConstants.kFrontRightDrivingCanId,
                                  DriveConstants.kFrontRightTurningCanId,
                                  DriveConstants.kFrontRightCancoderID,
                                  DriveConstants.kFrontRightZeroOffset,
-                                 False)
+                                 False,
+                                 True)
         self.m_BL = SwerveModule(DriveConstants.kRearLeftDrivingCanId,
                                  DriveConstants.kRearLeftTurningCanId,
                                  DriveConstants.kRearRightCancoderID,
                                  DriveConstants.kRearRightZeroOffset,
-                                 False)
+                                 False,
+                                 True)
         self.m_BR = SwerveModule(DriveConstants.kRearRightDrivingCanId,
                                  DriveConstants.kRearRightTurningCanId,
                                  DriveConstants.kRearRightCancoderID,
                                  DriveConstants.kRearRightZeroOffset,
-                                 False)
+                                 False,
+                                 True)
 
         # Set initial value of software-tracked position. All of these should be zero, but sometimes SPARK MAXes are
         # weird, so we take this safety step.
@@ -118,6 +125,14 @@ class DriveSubsystem(commands2.Subsystem):
         self.ax = 0
         self.ay = 0
         self.alpha = 0
+
+        self.currentRotation = 0.0
+        self.currentTranslationDir = 0.0
+        self.currentTranslationMag = 0.0
+
+        self.magLimiter = SlewRateLimiter(DriveConstants.kMagnitudeSlewRate)
+        self.rotLimiter = SlewRateLimiter(DriveConstants.kRotationalSlewRate)
+        self.prevTime = Timer.getFPGATimestamp()
 
         # Setup some variables for Closed Loop Turning.
         self.clt_target = self.pose_estimator.get_heading().degrees()
@@ -558,3 +573,120 @@ class DriveSubsystem(commands2.Subsystem):
             SmartDashboard.putData("CLT Controller", self.clt_controller)
 
 # Legacy methods
+
+    def drive2(
+        self,
+        xSpeed: float,
+        ySpeed: float,
+        rot: float,
+        fieldRelative: bool,
+        rateLimit: bool,
+        square: bool = False
+    ) -> None:
+        """Method to drive the robot using joystick info.
+
+        :param xSpeed:        Speed of the robot in the x direction (forward).
+        :param ySpeed:        Speed of the robot in the y direction (sideways).
+        :param rot:           Angular rate of the robot.
+        :param fieldRelative: Whether the provided x and y speeds are relative to the
+                              field.
+        :param rateLimit:     Whether to enable rate limiting for smoother control.
+        :param square:        Whether to square the inputs (useful for manual control)
+        """
+
+        if square:
+            rot = rot * abs(rot)
+            norm = math.sqrt(xSpeed * xSpeed + ySpeed * ySpeed)
+            xSpeed = xSpeed * norm
+            ySpeed = ySpeed * norm
+
+        xSpeedCommanded = xSpeed
+        ySpeedCommanded = ySpeed
+
+        if rateLimit:
+            # Convert XY to polar for rate limiting
+            inputTranslationDir = math.atan2(ySpeed, xSpeed)
+            inputTranslationMag = math.hypot(xSpeed, ySpeed)
+
+            # Calculate the direction slew rate based on an estimate of the lateral acceleration
+            if self.currentTranslationMag != 0.0:
+                directionSlewRate = abs(
+                    DriveConstants.kDirectionSlewRate / self.currentTranslationMag
+                )
+            else:
+                directionSlewRate = 500.0
+                # some high number that means the slew rate is effectively instantaneous
+
+            currentTime = Timer.getFPGATimestamp()
+            elapsedTime = currentTime - self.prevTime
+            angleDif = swerveutils.angleDifference(
+                inputTranslationDir, self.currentTranslationDir
+            )
+            if angleDif < 0.45 * math.pi:
+                self.currentTranslationDir = swerveutils.stepTowardsCircular(
+                    self.currentTranslationDir,
+                    inputTranslationDir,
+                    directionSlewRate * elapsedTime,
+                )
+                self.currentTranslationMag = self.magLimiter.calculate(
+                    inputTranslationMag
+                )
+
+            elif angleDif > 0.85 * math.pi:
+                # some small number to avoid floating-point errors with equality checking
+                # keep currentTranslationDir unchanged
+                if self.currentTranslationMag > 1e-4:
+                    self.currentTranslationMag = self.magLimiter.calculate(0.0)
+                else:
+                    self.currentTranslationDir = swerveutils.wrapAngle(
+                        self.currentTranslationDir + math.pi
+                    )
+                    self.currentTranslationMag = self.magLimiter.calculate(
+                        inputTranslationMag
+                    )
+
+            else:
+                self.currentTranslationDir = swerveutils.stepTowardsCircular(
+                    self.currentTranslationDir,
+                    inputTranslationDir,
+                    directionSlewRate * elapsedTime,
+                )
+                self.currentTranslationMag = self.magLimiter.calculate(0.0)
+
+            self.prevTime = currentTime
+
+            xSpeedCommanded = self.currentTranslationMag * math.cos(
+                self.currentTranslationDir
+            )
+            ySpeedCommanded = self.currentTranslationMag * math.sin(
+                self.currentTranslationDir
+            )
+            self.currentRotation = self.rotLimiter.calculate(rot)
+
+        else:
+            self.currentRotation = rot
+
+        # Convert the commanded speeds into the correct units for the drivetrain
+        xSpeedDelivered = xSpeedCommanded * DriveConstants.kMaxSpeedMetersPerSecond
+        ySpeedDelivered = ySpeedCommanded * DriveConstants.kMaxSpeedMetersPerSecond
+        rotDelivered = self.currentRotation * DriveConstants.kMaxAngularSpeed
+
+        swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(
+            ChassisSpeeds.fromFieldRelativeSpeeds(
+                xSpeedDelivered,
+                ySpeedDelivered,
+                rotDelivered,
+                self.get_heading(),
+            )
+            if fieldRelative
+            else ChassisSpeeds(xSpeedDelivered, ySpeedDelivered, rotDelivered)
+        )
+        fl, fr, rl, rr = SwerveDrive4Kinematics.desaturateWheelSpeeds(
+            swerveModuleStates, DriveConstants.kMaxSpeedMetersPerSecond
+        )
+
+        self.set_module_states([fl, fr, rl, rr])
+        #self.m_FL.set_desired_state_onboard(fl)
+        #self.m_FR.set_desired_state_onboard(fr)
+        #self.m_BL.set_desired_state_onboard(rl)
+        #self.m_BR.set_desired_state_onboard(rr)

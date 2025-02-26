@@ -113,20 +113,17 @@ class DriveConstants:
     ob_drive_pid = [0.5, 0, 0, 1 / units.feetToMeters(16.6)]
     ob_steer_pid = [1, 0, 0, 0]
 
+    closed_loop_ramp = 0.1  # was 0.0
+    open_loop_ramp = 0.25
+    drive_current_limit = 50  # was 60
+    azimuth_current_limit = 20  # Was 30
+
     # Physical offsets
     # Cancoders
-    kFrontLeftZeroOffset = -100 #placeholder
-    kRearLeftZeroOffset = -100
-    kFrontRightZeroOffset = -100
-    kRearRightZeroOffset = -100
-    """
-    m_FL_location = Translation2d(0.52705 / 2, 0.52705 / 2)
-    m_FR_location = Translation2d(0.52705 / 2, -0.52705 / 2)
-    m_BL_location = Translation2d(-0.52705 / 2, 0.52705 / 2)
-    m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
-    m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
-    """
-
+    kFrontLeftZeroOffset = -248.91 #placeholder
+    kRearLeftZeroOffset = -223.33
+    kFrontRightZeroOffset = -53.53
+    kRearRightZeroOffset = -202.85
 
 
 

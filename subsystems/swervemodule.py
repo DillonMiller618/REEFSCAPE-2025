@@ -1,73 +1,80 @@
+from wpimath.geometry import Rotation2d
+from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
+from rev import SparkMax, SparkMaxConfig, SparkMaxConfigAccessor
+from phoenix5.sensors import CANCoder, AbsoluteSensorRange, CANCoderStatusFrame, CANCoderConfiguration
+from constants import DriveConstants
 import math
 from typing import Union
 
-from wpimath.units import degreesToRadians
-from rev import SparkMax, SparkLowLevel, SparkBase
-from wpimath.geometry import Rotation2d
-from wpilib import DriverStation
-from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
-#from phoenix6.hardware.cancoder import CANcoder
-from phoenix5.sensors import CANCoder, CANCoderStatusFrame, AbsoluteSensorRange
-from phoenix5.sensors import CANCoderConfiguration
-
-from constants import ModuleConstants, getSwerveDrivingMotorConfig, getSwerveTurningMotorConfig
 
 class SwerveModule:
-    def __init__(
-        self,
-        drivingCANId: int,
-        turningCANId: int,
-        encoderCANId: int,
-        chassisAngularOffset: float,
-        turnMotorInverted: True,
-        motorControllerType = SparkMax
-    ) -> None:
-        """Constructs a MAXSwerveModule and configures the driving and turning motor,
-        encoder, and PID controller. This configuration is specific to the REV
-        MAXSwerve Module built with NEOs, SPARKS MAX, and a Through Bore
-        Encoder.
+
+    def __init__(self, dm_id: int, sm_id: int, enc_id: int, mod_offset: float, drive_invert: bool, steer_invert: bool):
         """
-        self.chassisAngularOffset = 0
-        self.desiredState = SwerveModuleState(0.0, Rotation2d())
+        dm_id: Drive motor CAN ID, int.
+        sm_id: Steer motor CAN ID, int.
+        enc_id: Absolute encoder CAN ID, int.
+        mod_offset: For Phoenix5 CANCoder setup, float. <- Scheduled to be deprecated.
+        drive_invert: Boolean for inverting drive motor, True/False.
+        steer_invert: Boolean for inverting steer motor, True/False.
+        """
+        # Connect the passed items to default variables.
+        self.drive_motor = SparkMax(dm_id, SparkMax.MotorType.kBrushless)
+        self.steer_motor = SparkMax(sm_id, SparkMax.MotorType.kBrushless)
+        self.encoder = CANCoder(enc_id, "rio")
+        self.drive_encoder = self.drive_motor.getEncoder()
 
 
-        # Declares each motor as brushless, sparkmaxes (see above), and gets canid from constants file
-        self.drivingSparkMax = motorControllerType(
-            drivingCANId, SparkLowLevel.MotorType.kBrushless
-        )
-        self.turningSparkMax = motorControllerType(
-            turningCANId, SparkLowLevel.MotorType.kBrushless
-        )
-        self.encoder = CANCoder(encoderCANId)
-        self.drivingEncoder = self.drivingSparkMax.getEncoder()
+        # Configure the Driving Spark Max motor
+        dconfig = SparkMaxConfig()
+        dconfig.inverted(drive_invert)
+        dconfig.setIdleMode(SparkMax.IdleMode.kBrake)
+        dconfig.encoder.positionConversionFactor(DriveConstants.dPositionConversionFactor)
+        dconfig.encoder.velocityConversionFactor(DriveConstants.dVelocityConversionFactor)
+        dconfig.closedLoop.FeedbackSensor.kPrimaryEncoder #check this syntax
+        dconfig.closedLoop.pidf(DriveConstants.ob_drive_pid[0],
+                              DriveConstants.ob_drive_pid[1],
+                              DriveConstants.ob_drive_pid[2],
+                              DriveConstants.ob_drive_pid[3])
+        dconfig.closedLoopRampRate(DriveConstants.closed_loop_ramp)
+        dconfig.openLoopRampRate(DriveConstants.open_loop_ramp)
+        dconfig.smartCurrentLimit(DriveConstants.drive_current_limit)
+        
 
-        # Factory reset, so we get the SPARKS MAX to a known state before configuring
-        # them. This is useful in case a SPARK MAX is swapped out.
-        self.drivingSparkMax.configure(
-            getSwerveDrivingMotorConfig(),
-            SparkBase.ResetMode.kResetSafeParameters,
-            SparkBase.PersistMode.kPersistParameters)
+        # Configure the Turning Spark Max Motor
+        tconfig = SparkMaxConfig()
+        tconfig.inverted(steer_invert)
+        tconfig.setIdleMode(SparkMax.IdleMode.kBrake)
+        tconfig.encoder.positionConversionFactor(DriveConstants.dPositionConversionFactor)
+        tconfig.encoder.velocityConversionFactor(DriveConstants.dVelocityConversionFactor)
+        tconfig.encoder.positionConversionFactor(1 / 21.42857)
+        tconfig.closedLoop.FeedbackSensor.kPrimaryEncoder
+        tconfig.closedLoop.pidf(DriveConstants.ob_steer_pid[0],
+                                DriveConstants.ob_steer_pid[1],
+                                DriveConstants.ob_steer_pid[2],
+                                DriveConstants.ob_steer_pid[3])
+        tconfig.closedLoopRampRate(DriveConstants.closed_loop_ramp)
+        tconfig.openLoopRampRate(DriveConstants.open_loop_ramp)
+        tconfig.smartCurrentLimit(DriveConstants.azimuth_current_limit)
 
-        self.turningSparkMax.configure(
-            getSwerveTurningMotorConfig(turnMotorInverted),
-            SparkBase.ResetMode.kResetSafeParameters,
-            SparkBase.PersistMode.kPersistParameters)
 
+        self.steer_pid = SparkMax.getClosedLoopController()
+        self.drive_pid = SparkMax.getClosedLoopController()
+
+        # Burn onto the flash
+        self.drive_motor.configure(dconfig, SparkMax.ResetMode.kResetSafeParameters, SparkMax.PersistMode.kPersistParameters)
+        self.steer_motor.configure(tconfig, SparkMax.ResetMode.kResetSafeParameters, SparkMax.PersistMode.kPersistParameters)
+
+        # Cancoder Config
         self.encoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 20)
         self.encoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, 20)
         self.encoder.setPositionToAbsolute()
-        self.encoder.configMagnetOffset(0)
+        self.encoder.configMagnetOffset(mod_offset)
         self.encoder.configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180)
 
-        self.steeringEncoder = self.turningSparkMax.getEncoder()
+        # Get encoder and start with the cancoder values
+        self.steer_enc = self.steer_motor.getEncoder()
         self.set_relative_start()
-
-        self.drivingPIDController = self.drivingSparkMax.getClosedLoopController()
-        self.turningPIDController = self.turningSparkMax.getClosedLoopController()
-
-        self.chassisAngularOffset = chassisAngularOffset
-        self.desiredState.angle = Rotation2d(degreesToRadians(self.steeringEncoder.getPosition())) #idk abt this
-        self.drivingEncoder.setPosition(0)
 
     def degree_to_steer(self, angle: Rotation2d) -> float:
         """Convert a value from 0 to 360 to a value from 0 to 1."""
@@ -77,20 +84,20 @@ class SwerveModule:
         """Set a desired swerve module state for SPARK MAXes."""
         state = self.optimize_onboard(desired_state)
 
-        if 0 < self.degree_to_steer(state.angle) <= 0.25 and 0.75 <= self.steeringEncoder.getPosition() % 1 < 1:
+        if 0 < self.degree_to_steer(state.angle) <= 0.25 and 0.75 <= self.steer_enc.getPosition() % 1 < 1:
             wrap_add = 1
-        elif 0 < self.steeringEncoder.getPosition() % 1 <= 0.25 and 0.75 <= self.degree_to_steer(state.angle) < 1:
+        elif 0 < self.steer_enc.getPosition() % 1 <= 0.25 and 0.75 <= self.degree_to_steer(state.angle) < 1:
             wrap_add = -1
         else:
             wrap_add = 0
 
-        angle_mod = self.degree_to_steer(state.angle) + math.trunc(self.steeringEncoder.getPosition()) + wrap_add
-        self.drivingPIDController.setReference(state.speed, SparkMax.ControlType.kVelocity)
-        self.turningPIDController.setReference(angle_mod, SparkMax.ControlType.kPosition)
+        angle_mod = self.degree_to_steer(state.angle) + math.trunc(self.steer_enc.getPosition()) + wrap_add
+        #self.drive_pid.setReference(state.speed, SparkMax.ControlType.kVelocity)
+        #self.steer_pid.setReference(angle_mod, SparkMax.ControlType.kPosition)
 
     def reset_encoders(self):
         """Reset the drive encoder to its zero position."""
-        self.drivingEncoder.setPosition(0)
+        self.drive_encoder.setPosition(0)
 
     def set_relative_start(self):
         """Preset the relative encoder on steering SPARK MAXes."""
@@ -98,20 +105,20 @@ class SwerveModule:
         if signed180input < 0:
             signed180input += 360
 
-        self.steeringEncoder.setPosition((signed180input / 360) + 5)
+        self.steer_enc.setPosition((signed180input / 360) + 5)
 
     def get_current_draw(self) -> Union[float, float]:
         """Returns a list of the drive and steering motor current draws."""
-        return [self.drivingSparkMax.getOutputCurrent(), self.turningSparkMax.getOutputCurrent()]
+        return [self.drive_motor.getOutputCurrent(), self.steer_motor.getOutputCurrent()]
 
     def get_state_onboard(self) -> SwerveModuleState:
         """Returns the current swerve module state."""
-        return SwerveModuleState(self.drivingEncoder.getVelocity(),
-                                 Rotation2d((self.steeringEncoder.getPosition() % 1) * math.pi * 2))
+        return SwerveModuleState(self.drive_encoder.getVelocity(),
+                                 Rotation2d((self.steer_enc.getPosition() % 1) * math.pi * 2))
 
     def get_position_onboard(self) -> SwerveModulePosition:
-        return SwerveModulePosition(self.drivingEncoder.getPosition(),
-                                    Rotation2d((self.steeringEncoder.getPosition() % 1) * math.pi * 2))
+        return SwerveModulePosition(self.drive_encoder.getPosition(),
+                                    Rotation2d((self.steer_enc.getPosition() % 1) * math.pi * 2))
 
     def optimize_onboard(self, desired_state: SwerveModuleState):
         inverted = False
@@ -119,7 +126,7 @@ class SwerveModule:
         if desired_degrees < 0:
             desired_degrees += 360  # converts desired degrees to 360
 
-        current_degrees = (self.steeringEncoder.getPosition() % 1) * 360  # converts current to 360
+        current_degrees = (self.steer_enc.getPosition() % 1) * 360  # converts current to 360
 
         if 90.0 < abs(current_degrees - desired_degrees) <= 270.0:
             inverted = True
