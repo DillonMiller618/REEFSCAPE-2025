@@ -57,22 +57,16 @@ class SwerveModule:
         self.encoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, 20)
         self.encoder.setPositionToAbsolute()
         self.encoder.configMagnetOffset(0)
-        #TODO check this later
         self.encoder.configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180)
 
-        #Invert motors based on instantiation
-        self.drivingSparkMax.setInverted(True)
-        self.turningSparkMax.setInverted(False)
-
         self.steeringEncoder = self.turningSparkMax.getEncoder()
-        self.steeringEncoder.setPosition(0)
+        self.set_relative_start()
 
         self.drivingPIDController = self.drivingSparkMax.getClosedLoopController()
         self.turningPIDController = self.turningSparkMax.getClosedLoopController()
 
-
         self.chassisAngularOffset = chassisAngularOffset
-        self.desiredState.angle = Rotation2d(degreesToRadians(self.encoder.getAbsolutePosition())) #idk abt this
+        self.desiredState.angle = Rotation2d(degreesToRadians(self.steeringEncoder.getPosition())) #idk abt this
         self.drivingEncoder.setPosition(0)
 
     def degree_to_steer(self, angle: Rotation2d) -> float:

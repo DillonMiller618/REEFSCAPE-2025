@@ -44,7 +44,7 @@ class DriveSubsystem(commands2.Subsystem):
         self.clt_controller.enableContinuousInput(0, 360)
 
         # Instantiate all swerve modules by passing the proper IDs and offsets to them.
-        self.m_FL = SwerveModule(DriveConstants.kFrontLeftCancoderID,
+        self.m_FL = SwerveModule(DriveConstants.kFrontLeftDrivingCanId,
                                  DriveConstants.kFrontLeftTurningCanId,
                                  DriveConstants.kFrontLeftCancoderID,
                                  DriveConstants.kFrontLeftZeroOffset,
@@ -94,7 +94,7 @@ class DriveSubsystem(commands2.Subsystem):
 
         # Setup a boolean that tracks if "debug mode" is enabled, which allows the drivetrain to spew significantly
         # more data than normal to the dashboard.
-        self.debug_mode = False
+        self.debug_mode = True
 
         # Setup a boolean to locally store which alliance the robot is on. The system will periodically check, but this
         # ensures that we are never in a situation where a read error will prevent the robot from functioning.
@@ -137,7 +137,7 @@ class DriveSubsystem(commands2.Subsystem):
 
     def drive_by_chassis_speeds(self, chassis_speeds: ChassisSpeeds):
         """Used for 2024 PathPlanner. Takes in ChassisSpeeds, sets target module states."""
-        swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(chassis_speeds)
+        swerve_module_states = DriveConstants.kDriveKinematics.toSwerveModuleStates(chassis_speeds)
 
         self.set_module_states(swerve_module_states)
 

@@ -46,27 +46,14 @@ class RobotContainer:
         self.configureAutos()
 
         # Configure default commands
-        self.robotDrive.setDefaultCommand(
-            # The left stick controls translation of the robot.
-            # Turning is controlled by the X axis of the right stick.
-            commands2.RunCommand(
-                lambda: self.robotDrive.drive(
-                    -wpimath.applyDeadband(
-                        self.driverController.getLeftY(), OIConstants.kDriveDeadband
-                    ),
-                    -wpimath.applyDeadband(
-                        self.driverController.getLeftX(), OIConstants.kDriveDeadband
-                    ),
-                    -wpimath.applyDeadband(
-                        self.driverController.getRightX(), OIConstants.kDriveDeadband
-                    ),
-                    True,
-                    True,
-                    square=True,
-                ),
-                self.robotDrive,
-            )
-        )
+        self.robotDrive.setDefaultCommand(commands2.cmd.run(
+            lambda: self.robotDrive.drive_2ok(
+                self.driverController.getLeftY() * DriveConstants.kMaxSpeedMetersPerSecond,
+                self.driverController.getLeftX() * DriveConstants.kMaxSpeedMetersPerSecond,
+                self.driverController.getRightX() * DriveConstants.kMaxAngularSpeed,
+                True
+            ), self.robotDrive
+        ))
 
     def configureButtonBindings(self) -> None:
         """
@@ -76,12 +63,12 @@ class RobotContainer:
         """
 
 
-        #xButton = JoystickButton(self.driverController, PS4Controller.Button.kSquare)
-        #xButton.onTrue(ResetXY(x=0.0, y=0.0, headingDegrees=0.0, drivetrain=self.robotDrive))
-        #xButton.whileTrue(RunCommand(self.robotDrive.drive_lock(), self.robotDrive))  # use the swerve X brake when "X" is pressed
+        xButton = JoystickButton(self.driverController, PS4Controller.Button.kSquare)
+        xButton.onTrue(ResetXY(x=0.0, y=0.0, headingDegrees=0.0, drivetrain=self.robotDrive))
+        xButton.whileTrue(RunCommand(self.robotDrive.drive_lock(), self.robotDrive))  # use the swerve X brake when "X" is pressed
 
         yButton = JoystickButton(self.driverController, PS4Controller.Button.kTriangle)
-        yButton.onTrue(ResetSwerveFront(self.robotDrive))
+        yButton.onTrue((self.robotDrive.drive(0, 0, 0.5, False)))
 
     def disablePIDSubsystems(self) -> None:
         """Disables all ProfiledPIDSubsystem and PIDSubsystem instances.
