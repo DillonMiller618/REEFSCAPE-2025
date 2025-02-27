@@ -1,6 +1,6 @@
 from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
-from rev import SparkMax, SparkMaxConfig, SparkMaxConfigAccessor
+from rev import SparkMax, SparkMaxConfig, SparkMaxConfigAccessor, SparkBaseConfig
 from phoenix5.sensors import CANCoder, AbsoluteSensorRange, CANCoderStatusFrame, CANCoderConfiguration
 from constants import DriveConstants
 import math
@@ -28,14 +28,13 @@ class SwerveModule:
         # Configure the Driving Spark Max motor
         dconfig = SparkMaxConfig()
         dconfig.inverted(drive_invert)
-        dconfig.setIdleMode(SparkMax.IdleMode.kBrake)
+        dconfig.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
         dconfig.encoder.positionConversionFactor(DriveConstants.dPositionConversionFactor)
         dconfig.encoder.velocityConversionFactor(DriveConstants.dVelocityConversionFactor)
-        dconfig.closedLoop.FeedbackSensor.kPrimaryEncoder #check this syntax
-        dconfig.closedLoop.pidf(DriveConstants.ob_drive_pid[0],
+        dconfig.closedLoop.FeedbackSensor(dconfig.closedLoop.FeedbackSensor.kPrimaryEncoder)
+        dconfig.closedLoop.pid(DriveConstants.ob_drive_pid[0],
                               DriveConstants.ob_drive_pid[1],
-                              DriveConstants.ob_drive_pid[2],
-                              DriveConstants.ob_drive_pid[3])
+                              DriveConstants.ob_drive_pid[2])
         dconfig.closedLoopRampRate(DriveConstants.closed_loop_ramp)
         dconfig.openLoopRampRate(DriveConstants.open_loop_ramp)
         dconfig.smartCurrentLimit(DriveConstants.drive_current_limit)
@@ -44,22 +43,22 @@ class SwerveModule:
         # Configure the Turning Spark Max Motor
         tconfig = SparkMaxConfig()
         tconfig.inverted(steer_invert)
-        tconfig.setIdleMode(SparkMax.IdleMode.kBrake)
+        tconfig.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
         tconfig.encoder.positionConversionFactor(DriveConstants.dPositionConversionFactor)
         tconfig.encoder.velocityConversionFactor(DriveConstants.dVelocityConversionFactor)
         tconfig.encoder.positionConversionFactor(1 / 21.42857)
-        tconfig.closedLoop.FeedbackSensor.kPrimaryEncoder
-        tconfig.closedLoop.pidf(DriveConstants.ob_steer_pid[0],
+        tconfig.closedLoop.FeedbackSensor(tconfig.closedLoop.FeedbackSensor.kPrimaryEncoder)
+        tconfig.closedLoop.pid(DriveConstants.ob_steer_pid[0],
                                 DriveConstants.ob_steer_pid[1],
-                                DriveConstants.ob_steer_pid[2],
-                                DriveConstants.ob_steer_pid[3])
+                                DriveConstants.ob_steer_pid[2])
         tconfig.closedLoopRampRate(DriveConstants.closed_loop_ramp)
         tconfig.openLoopRampRate(DriveConstants.open_loop_ramp)
         tconfig.smartCurrentLimit(DriveConstants.azimuth_current_limit)
 
 
-        self.steer_pid = SparkMax.getClosedLoopController()
-        self.drive_pid = SparkMax.getClosedLoopController()
+        self.steer_pid = self.drive_motor.getClosedLoopController()
+        self.drive_pid = self.steer_motor.getClosedLoopController()
+
 
         # Burn onto the flash
         self.drive_motor.configure(dconfig, SparkMax.ResetMode.kResetSafeParameters, SparkMax.PersistMode.kPersistParameters)
@@ -92,8 +91,8 @@ class SwerveModule:
             wrap_add = 0
 
         angle_mod = self.degree_to_steer(state.angle) + math.trunc(self.steer_enc.getPosition()) + wrap_add
-        #self.drive_pid.setReference(state.speed, SparkMax.ControlType.kVelocity)
-        #self.steer_pid.setReference(angle_mod, SparkMax.ControlType.kPosition)
+        self.drive_pid.setReference(state.speed, SparkMax.ControlType.kVelocity)
+        self.steer_pid.setReference(angle_mod, SparkMax.ControlType.kPosition)
 
     def reset_encoders(self):
         """Reset the drive encoder to its zero position."""

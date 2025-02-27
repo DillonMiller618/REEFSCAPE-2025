@@ -108,10 +108,10 @@ class DriveConstants:
 
     # PIDs
     snap_controller_PID = [0.051, 0, 0] #snap speed of mk4is
-    turret_controller_PID = [0.08, 0, 0.0001] #idk
+    turret_controller_PID = [0.08, 0, 0] #idk
     clt_controller_PID = [0.04, 0, 0] #closed look turning controller consts
-    ob_drive_pid = [0.5, 0, 0, 1 / units.feetToMeters(16.6)]
-    ob_steer_pid = [1, 0, 0, 0]
+    ob_drive_pid = [0.1, 0, 0.01, 1 / units.feetToMeters(16.6)]
+    ob_steer_pid = [0.1, 0, 0.01, 0]
 
     closed_loop_ramp = 0.1  # was 0.0
     open_loop_ramp = 0.25

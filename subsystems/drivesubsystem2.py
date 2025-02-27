@@ -35,10 +35,10 @@ class DriveSubsystem(commands2.Subsystem):
 
         # Setup "turret" controller, which is similar to the snap controller, but has different parameters because it
         # is used only in shooting while moving code.
-        self.turret_controller = PIDController(DriveConstants.turret_controller_PID[0],
-                                               DriveConstants.turret_controller_PID[1],
-                                               DriveConstants.turret_controller_PID[2])
-        self.turret_controller.enableContinuousInput(-180, 180)
+        self.pivot_controller = PIDController(DriveConstants.ob_steer_pid[0],
+                                               DriveConstants.ob_steer_pid[1],
+                                               DriveConstants.ob_steer_pid[2])
+        self.pivot_controller.enableContinuousInput(-180, 180)
 
         # Setup "closed-loop-turning controller" which is used to maintain robot heading while translating.
         self.clt_controller = PIDController(DriveConstants.clt_controller_PID[0],
@@ -52,25 +52,25 @@ class DriveSubsystem(commands2.Subsystem):
                                  DriveConstants.kFrontLeftCancoderID,
                                  DriveConstants.kFrontLeftZeroOffset,
                                  True,
-                                 True)
+                                 False)
         self.m_FR = SwerveModule(DriveConstants.kFrontRightDrivingCanId,
                                  DriveConstants.kFrontRightTurningCanId,
                                  DriveConstants.kFrontRightCancoderID,
                                  DriveConstants.kFrontRightZeroOffset,
                                  False,
-                                 True)
+                                 False)
         self.m_BL = SwerveModule(DriveConstants.kRearLeftDrivingCanId,
                                  DriveConstants.kRearLeftTurningCanId,
                                  DriveConstants.kRearRightCancoderID,
                                  DriveConstants.kRearRightZeroOffset,
                                  False,
-                                 True)
+                                 False)
         self.m_BR = SwerveModule(DriveConstants.kRearRightDrivingCanId,
                                  DriveConstants.kRearRightTurningCanId,
                                  DriveConstants.kRearRightCancoderID,
                                  DriveConstants.kRearRightZeroOffset,
                                  False,
-                                 True)
+                                 False)
 
         # Set initial value of software-tracked position. All of these should be zero, but sometimes SPARK MAXes are
         # weird, so we take this safety step.
@@ -570,7 +570,7 @@ class DriveSubsystem(commands2.Subsystem):
             SmartDashboard.putNumber("BR Angle", self.m_BR.get_state_onboard().angle.degrees())
             SmartDashboard.putNumber("BR Speed", abs(self.m_BR.get_state_onboard().speed))
             SmartDashboard.putData("Snap Controller", self.snap_controller)
-            SmartDashboard.putData("CLT Controller", self.clt_controller)
+            SmartDashboard.putData("CLT Controller", self.pivot_controller)
 
 # Legacy methods
 
