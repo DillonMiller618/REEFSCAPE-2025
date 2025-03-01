@@ -51,7 +51,7 @@ class RobotContainer:
                 self.driverController.getLeftX() ** 3 * DriveConstants.kMaxAngularSpeed,
                 self.driverController.getLeftY() ** 3 * DriveConstants.kMaxAngularSpeed,
                 self.driverController.getRightX() ** 3 * DriveConstants.kMaxAngularSpeed,
-                True,
+                False,
             ), self.robotDrive
         ))
 

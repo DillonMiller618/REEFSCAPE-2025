@@ -1,246 +1,136 @@
-# Copyright (c) FIRST and other WPILib contributors.
-# Open Source Software; you can modify and/or share it under the terms of
-# the WPILib BSD license file in the root directory of this project.
-
 """
-The constants module is a convenience place for teams to hold robot-wide
-numerical or boolean constants. Don't use this for any other purpose!
-"""
+This file defines constants related to your robot.  These constants include:
 
+ * Physical constants (exterior dimensions, wheelbase)
+
+ * Mechanical constants (gear reduction ratios)
+
+ * Electrical constants (current limits, CAN bus IDs, roboRIO slot numbers)
+
+ * Operation constants (desired max velocity, max turning speed)
+
+ * Software constants (USB ID for driver joystick)
+"""
 
 import math
+from collections import namedtuple
+import rev
+import phoenix5
+from swervepy import u
 
-from wpimath import units
-from wpimath.geometry import Translation2d
-from wpimath.kinematics import SwerveDrive4Kinematics
-from wpimath.trajectory import TrapezoidProfileRadians
+# Physical constants
+phys_data = {
+    "track_width": (21.73 * u.inch).m_as(u.m),
+    "wheel_base": (21.73 * u.inch).m_as(u.m),
+    "wheel_circumference": 4 * math.pi * u.inch,
+}
+PHYS = namedtuple("Data", phys_data.keys())(**phys_data)
 
-from rev import SparkBase, SparkBaseConfig, ClosedLoopConfig
-import phoenix6.hardware.cancoder
+# Mechanical constants
+mech_data = {
+    "swerve_module_propulsion_gearing_ratio": 6.75,  # SDS Mk4i L2
+    "swerve_module_steering_gearing_ratio": 150 / 7,  # SDS Mk4i
 
-phoenix6.hardware.CANcoder(1, "rio")
+    "propulsion_motor_inverted": False,
+    "steering_motor_inverted": False,
+}
+MECH = namedtuple("Data", mech_data.keys())(**mech_data)
 
-class NeoMotorConstants:
-    kFreeSpeedRpm = 5676
+# Electrical constants
+elec_data = {
+    # These current limit parameters are per-motor in the swerve modules
+    "drive_continuous_current_limit": 40,
+    "azimuth_continuous_current_limit": 30,
+    "drive_peak_current_limit": 60,
+    "azimuth_peak_current_limit": 40,
 
+    # Talon FX motor controllers can set peak_current_duration.
+    # SparkMAX motor controllers can't.
+    "drive_peak_current_duration": 0.01,
+    "azimuth_peak_current_duration": 0.01,
 
-class LiftEffectorClimbConstants:
-    # CAN IDs for lift motor, effector1 and effector2, liftpivot1 and liftpivot2, and climb motor
-    kLiftVertCanID = 9
-    kEffector1CanID = 10
-    kEffector2CanID = 11
-    kLiftPivot1CanID = 12
-    kLiftPivot2CanID = 13
-    kClimbCanID = 14
+    # time in seconds for propulsion motors to ramp up to full speed
+    # reference: https://codedocs.revrobotics.com/java/com/revrobotics/cansparkmax
+    "open_loop_ramp_rate": 0.5,
+    "closed_loop_ramp_rate": 0.5,
 
-    # Motor power levels - 0.0 is 0%, 1.0 is 100%
-    kLiftVertPower = 0.5
-    kEffector1Power = 0.5
-    kEffector2Power = 0.5
-    kLiftPivot1Power = 0.5
-    kLiftPivot2Power = 0.5
-    kClimbPower = 0.75
+    "RF_steer_CAN_ID": 5,
+    "RF_drive_CAN_ID": 1,
+    "RF_encoder_DIO": 16, # these have been updated to can ids
+    "RB_steer_CAN_ID": 7,
+    "RB_drive_CAN_ID": 3,
+    "RB_encoder_DIO": 18,
+    "LB_steer_CAN_ID": 4,
+    "LB_drive_CAN_ID": 8,
+    "LB_encoder_DIO": 15,
+    "LF_steer_CAN_ID": 2,
+    "LF_drive_CAN_ID": 6,
+    "LF_encoder_DIO": 17,
+}
+ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 
-    # Physical Limits for each
-    #kLiftVertLimit = None # This is determined instead by limit switches
-    # We might not need these, blank for now.
+JOYSTICK_AXES = {
+    "LEFT_X": 0,
+    "LEFT_Y": 1,
+    "RIGHT_X": 2,
+    "RIGHT_Y": 5,
+}
 
+# Operation constants
+op_data = {
+    # These maximum parameters reflect the maximum physically possible, not the
+    # desired maximum limit.
+    "max_speed": 4.5 * (u.m / u.s),
+    "max_angular_velocity": 11.5 * (u.rad / u.s),
 
-class DriveConstants:
-    # Driving Parameters - Note that these are not the maximum capable speeds of
-    # the robot, rather the allowed maximum speeds
-    kMaxSpeedMetersPerSecond = 4.8
-    kMaxAngularSpeed = math.tau  # radians per second
-    kWheelDiameter = 4
-    kWheelCircumference = kWheelDiameter * math.pi
-    kDriveGearRatio = 6.12
-    kAngleGearRatio = 21.43
+    # You can limit how fast your robot moves (e.g. during testing) using the
+    # following parameters.  Setting to None is the same as setting to
+    # max_speed/max_angular_velocity, and indicates no limit.
+    #
+    "speed_limit": 1.0 * (u.m / u.s),
+    "angular_velocity_limit": 2.5 * (u.rad / u.s),
 
-    dPositionConversionFactor = kWheelCircumference / kDriveGearRatio
-    dVelocityConversionFactor = dPositionConversionFactor / 60
+    # For NEO / SparkMAX, use the following and comment out the Falcon500 values
+    "propulsion_neutral": rev.SparkMax.IdleMode.kCoast,
+    "steering_neutral": rev.SparkMax.IdleMode.kBrake,
+    # For Falcon500 / TalonFX, use the following and comment out the NEO values
+    # "propulsion_neutral": phoenix5.NeutralMode.Coast,
+    # "steering_neutral": phoenix5.NeutralMode.Brake,
 
-    kDirectionSlewRate = 1.2  # radians per second
-    kMagnitudeSlewRate = 1.8  # percent per second (1 = 100%)
-    kRotationalSlewRate = 2.0  # percent per second (1 = 100%)
+    # Values to pass to stick.getRawAxis()
+    # Set these according to your operator preferences
+    "translation_joystick_axis": JOYSTICK_AXES["RIGHT_Y"],
+    "strafe_joystick_axis": JOYSTICK_AXES["RIGHT_X"],
+    "rotation_joystick_axis": JOYSTICK_AXES["LEFT_X"],
+}
+OP = namedtuple("Data", op_data.keys())(**op_data)
 
-    # Chassis configuration
-    kTrackWidth = units.inchesToMeters(26.5)
-    # Distance between centers of right and left wheels on robot
-    kWheelBase = units.inchesToMeters(26.5)
+# Software constants
+sw_data = {
+    # field_relative: True if "forward" means "down the field"; False if
+    # "forward" means "in the direction the robot is facing".  A True value
+    # requires a (non-Dummy) gyro.
+    "field_relative": False,
 
-    # Distance between front and back wheels on robot
-    kModulePositions = [
-        Translation2d(kWheelBase / 2, kTrackWidth / 2),
-        Translation2d(kWheelBase / 2, -kTrackWidth / 2),
-        Translation2d(-kWheelBase / 2, kTrackWidth / 2),
-        Translation2d(-kWheelBase / 2, -kTrackWidth / 2),
-    ]
-    kDriveKinematics = SwerveDrive4Kinematics(*kModulePositions)
+    # drive_open_loop: True if we're not using PID control *for velocity targeting*,
+    # i.e. when a target velocity is calculated, do we use the corresponding
+    # CoaxialDriveComponent's follow_velocity_open() method (set motor output
+    # proportionally based on target and max velocities) or
+    # follow_velocity_closed() method (put motor in PID control mode and set
+    # target velocity).
+    #
+    "drive_open_loop": True,
 
-    # set it to True if you were using a ruler for zeroing and want to ignore the offsets below
-    kAssumeZeroOffsets = True
+    # Constants for PID control of the propulsion AND steering motors
+    # (kP must be non-zero, or azimuth motors won't engage.)
+    # "kP": 0.3,  # representative value for Falcon500 motors
+    "kP": 0.01,   # representative value for NEO motors
+    "kI": 0,
+    "kD": 0,
 
-    # set the above to == False, if you are using Rev zeroing tool (and you have to tinker with offsets below)
-    kFrontLeftChassisAngularOffset = -math.pi / 2
-    kFrontRightChassisAngularOffset = 0
-    kBackLeftChassisAngularOffset = math.pi
-    kBackRightChassisAngularOffset = math.pi / 2
-
-    # SPARK MAX CAN IDs
-    kFrontLeftDrivingCanId = 6
-    kRearLeftDrivingCanId = 8
-    kFrontRightDrivingCanId = 1
-    kRearRightDrivingCanId = 3
-
-    kFrontLeftTurningCanId = 2
-    kRearLeftTurningCanId = 4
-    kFrontRightTurningCanId = 5
-    kRearRightTurningCanId = 7
-
-    # CANCoder IDs
-    kFrontLeftCancoderID = 17
-    kRearLeftCancoderID = 15
-    kFrontRightCancoderID = 16
-    kRearRightCancoderID = 18
-
-    kGryoCanID = 13
-    kGyroReversed = -1  # can be +1 if not flipped (affects field-relative driving)
-
-    # PIDs
-    snap_controller_PID = [0.051, 0, 0] #snap speed of mk4is
-    turret_controller_PID = [0.08, 0, 0] #idk
-    clt_controller_PID = [0.04, 0, 0] #closed look turning controller consts
-    ob_drive_pid = [0.1, 0, 0.01, 1 / units.feetToMeters(16.6)]
-    ob_steer_pid = [0.1, 0, 0.01, 0]
-
-    closed_loop_ramp = 0.1  # was 0.0
-    open_loop_ramp = 0.25
-    drive_current_limit = 50  # was 60
-    azimuth_current_limit = 20  # Was 30
-
-    # Physical offsets
-    # Cancoders
-    kFrontLeftZeroOffset = -248.91 #placeholder
-    kRearLeftZeroOffset = -223.33
-    kFrontRightZeroOffset = -53.53
-    kRearRightZeroOffset = -202.85
-
-
-
-def getSwerveDrivingMotorConfig() -> SparkBaseConfig:
-    drivingConfig = SparkBaseConfig()
-    drivingConfig.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
-    drivingConfig.smartCurrentLimit(ModuleConstants.kDrivingMotorCurrentLimit)
-    drivingConfig.encoder.positionConversionFactor(ModuleConstants.kDrivingEncoderPositionFactor)
-    drivingConfig.encoder.velocityConversionFactor(ModuleConstants.kDrivingEncoderVelocityFactor)
-    drivingConfig.closedLoop.setFeedbackSensor(ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
-    drivingConfig.closedLoop.pid(ModuleConstants.kDrivingP, ModuleConstants.kDrivingI, ModuleConstants.kDrivingD)
-    drivingConfig.closedLoop.velocityFF(ModuleConstants.kDrivingFF)
-    drivingConfig.closedLoop.outputRange(ModuleConstants.kDrivingMinOutput, ModuleConstants.kDrivingMaxOutput)
-    return drivingConfig
-
-
-def getSwerveTurningMotorConfig(turnMotorInverted: bool) -> SparkBaseConfig:
-    turningConfig = SparkBaseConfig()
-    turningConfig.inverted(turnMotorInverted)
-    turningConfig.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
-    turningConfig.smartCurrentLimit(ModuleConstants.kTurningMotorCurrentLimit)
-    turningConfig.absoluteEncoder.positionConversionFactor(ModuleConstants.kTurningEncoderPositionFactor)
-    turningConfig.absoluteEncoder.velocityConversionFactor(ModuleConstants.kTurningEncoderVelocityFactor)
-    turningConfig.absoluteEncoder.inverted(ModuleConstants.kTurningEncoderInverted)
-    turningConfig.closedLoop.setFeedbackSensor(ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
-    turningConfig.closedLoop.pid(ModuleConstants.kTurningP, ModuleConstants.kTurningI, ModuleConstants.kTurningD)
-    turningConfig.closedLoop.velocityFF(ModuleConstants.kTurningFF)
-    turningConfig.closedLoop.outputRange(ModuleConstants.kTurningMinOutput, ModuleConstants.kTurningMaxOutput)
-    turningConfig.closedLoop.positionWrappingEnabled(True)
-    turningConfig.closedLoop.positionWrappingInputRange(0, ModuleConstants.kTurningEncoderPositionFactor)
-    return turningConfig
-
-
-class ModuleConstants:
-    # WATCH OUT:
-    #  - one or both of two constants below need to be flipped from True to False (by trial and error)
-    #  , depending which swerve module you have (MK4i, MK4n, Rev, WCP, ThriftyBot, etc)
-    kTurningEncoderInverted = True
-    kTurningMotorInverted = True
-
-    # The MAXSwerve module can be configured with one of three pinion gears: 12T, 13T, or 14T.
-    # This changes the drive speed of the module (a pinion gear with more teeth will result in a
-    # robot that drives faster).
-    kDrivingMotorPinionTeeth = 14
-
-    # Calculations required for driving motor conversion factors and feed forward
-    kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60
-    kWheelDiameterMeters = 0.0762
-    kWheelCircumferenceMeters = kWheelDiameterMeters * math.pi
-    # 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15 teeth on the bevel pinion
-    kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15)
-    kDriveWheelFreeSpeedRps = (
-        kDrivingMotorFreeSpeedRps * kWheelCircumferenceMeters
-    ) / kDrivingMotorReduction
-
-    kDrivingEncoderPositionFactor = (
-        kWheelDiameterMeters * math.pi
-    ) / kDrivingMotorReduction  # meters
-    kDrivingEncoderVelocityFactor = (
-        (kWheelDiameterMeters * math.pi) / kDrivingMotorReduction
-    ) / 60.0  # meters per second
-
-    kTurningEncoderPositionFactor = math.tau  # radian
-    kTurningEncoderVelocityFactor = math.tau / 60.0  # radians per second
-
-    kTurningEncoderPositionPIDMinInput = 0  # radian
-    kTurningEncoderPositionPIDMaxInput = kTurningEncoderPositionFactor  # radian
-
-    kDrivingP = 0.04
-    kDrivingI = 0
-    kDrivingD = 0
-    kDrivingFF = 1 / kDriveWheelFreeSpeedRps
-    kDrivingMinOutput = -1
-    kDrivingMaxOutput = 1
-
-    kTurningP = 1  # can be dialed down if you see oscillations in the turning motor
-    kTurningI = 0
-    kTurningD = 0
-    kTurningFF = 0
-    kTurningMinOutput = -1
-    kTurningMaxOutput = 1
-
-    kDrivingMotorIdleMode = SparkBase.IdleMode.kBrake
-    kTurningMotorIdleMode = SparkBase.IdleMode.kBrake
-
-    kDrivingMotorCurrentLimit = 50  # amp
-    kTurningMotorCurrentLimit = 20  # amp
-
-    kDrivingMinSpeedMetersPerSecond = 0.01
-
-
-class OIConstants:
-    # Constants for the controls of the robot
-    # PS4 controller port
-    kDriverControllerPort = 0
-    kDriveDeadband = 0.05
-
-    # Button Board controller port
-    kButtonBoardPort = 1
-
-
-class AutoConstants:
-    kUseSqrtControl = True  # improves arrival time and precision for simple driving commands
-
-    # below are really trajectory constants
-    kMaxSpeedMetersPerSecond = 3
-    kMaxAccelerationMetersPerSecondSquared = 3
-    kMaxAngularSpeedRadiansPerSecond = math.pi
-    kMaxAngularSpeedRadiansPerSecondSquared = math.pi
-
-    kPXController = 5.0
-    kIXController = 0
-    kDXController = 0
-    kPThetaController = 5.0
-
-    # Constraint for the motion profiled robot angle controller
-    kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(
-        kMaxAngularSpeedRadiansPerSecond, kMaxAngularSpeedRadiansPerSecondSquared
-    )
-    kModuleRadiusFromCenter = 0.372681
+    # Constants for feed-forward of propulsion motors
+    "kS": 0,
+    "kV": 0,
+    "kA": 0,
+}
+SW = namedtuple("Data", sw_data.keys())(**sw_data)

@@ -2,9 +2,11 @@ from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
 from rev import SparkMax, SparkMaxConfig, SparkMaxConfigAccessor, SparkBaseConfig
 from phoenix5.sensors import CANCoder, AbsoluteSensorRange, CANCoderStatusFrame, CANCoderConfiguration
-from constants import DriveConstants
+from constants import DriveConstants, ModuleConstants
 import math
 from typing import Union
+
+from wpilib import SmartDashboard
 
 
 class SwerveModule:
@@ -70,6 +72,7 @@ class SwerveModule:
         self.encoder.setPositionToAbsolute()
         self.encoder.configMagnetOffset(mod_offset)
         self.encoder.configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180)
+        self.encoder.configSensorDirection(ModuleConstants.kTurningEncoderInverted)
 
         # Get encoder and start with the cancoder values
         self.steer_enc = self.steer_motor.getEncoder()
@@ -91,8 +94,11 @@ class SwerveModule:
             wrap_add = 0
 
         angle_mod = self.degree_to_steer(state.angle) + math.trunc(self.steer_enc.getPosition()) + wrap_add
+        angle_mod /= 5
         self.drive_pid.setReference(state.speed, SparkMax.ControlType.kVelocity)
         self.steer_pid.setReference(angle_mod, SparkMax.ControlType.kPosition)
+
+        SmartDashboard.putNumber("anglemod", angle_mod)
 
     def reset_encoders(self):
         """Reset the drive encoder to its zero position."""

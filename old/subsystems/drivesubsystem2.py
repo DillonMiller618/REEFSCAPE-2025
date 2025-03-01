@@ -51,7 +51,7 @@ class DriveSubsystem(commands2.Subsystem):
                                  DriveConstants.kFrontLeftTurningCanId,
                                  DriveConstants.kFrontLeftCancoderID,
                                  DriveConstants.kFrontLeftZeroOffset,
-                                 True,
+                                 False,
                                  False)
         self.m_FR = SwerveModule(DriveConstants.kFrontRightDrivingCanId,
                                  DriveConstants.kFrontRightTurningCanId,
