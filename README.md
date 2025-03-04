@@ -1,5 +1,6 @@
 # SMART #6932 REEFSCAPE-2025
-#### This code is a fork of Gene Panov's (username epanov1602) [CommandRevSwerve](https://github.com/epanov1602/CommandRevSwerve) Repository. We take no credit for the docs or the framework. Guides are below for how to properly add subsystems to the repository.
+#### This code is a fork of [SwervePy](https://github.com/EWall25/swervepy), a framwork that we're using for our drivetrain. We take no credit for the framework. Guides are below for how to properly add subsystems to the repository.
+#### (some changes are needed)
 
 ## Requirements
 - Robotpy (latest)

@@ -1,5 +1,7 @@
 robotpy
 robotpy-commands-v2
 robotpy-rev
-robotpy-navx
-wpilib
+robotpy-phoenix5
+robotpy-phoenix6
+robotpy-pathplannerlib
+wpilib==2025.2.1
