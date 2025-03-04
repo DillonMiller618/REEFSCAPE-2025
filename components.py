@@ -58,7 +58,7 @@ azimuth_param_values = {
     # Falcon500CoaxialDriveComponent takes all these params, plus one more
     # (peak_current_duration).
     #
-    "gear_ratio": MECH.swerve_module_propulsion_gearing_ratio,
+    "gear_ratio": MECH.swerve_module_steering_gearing_ratio,
     "max_angular_velocity": OP.max_angular_velocity,
     "ramp_rate": 0,
     "continuous_current_limit": ELEC.azimuth_continuous_current_limit,

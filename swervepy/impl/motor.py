@@ -13,6 +13,7 @@ from typing_extensions import deprecated
 from wpimath.controller import SimpleMotorFeedforwardMeters
 from wpimath.geometry import Rotation2d
 from wpimath.system.plant import DCMotor
+from wpilib import SmartDashboard
 
 from .sensor import SparkMaxEncoderType, SparkMaxAbsoluteEncoder
 from .. import conversions, u

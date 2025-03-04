@@ -55,7 +55,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.RF_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(250),
+                    azimuth_offset=Rotation2d.fromDegrees(253),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.rf_enc,
                 ),

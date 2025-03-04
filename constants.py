@@ -28,7 +28,7 @@ PHYS = namedtuple("Data", phys_data.keys())(**phys_data)
 
 # Mechanical constants
 mech_data = {
-    "swerve_module_propulsion_gearing_ratio": 6.75,  # SDS Mk4i L2
+    "swerve_module_propulsion_gearing_ratio": 6.12,  # SDS Mk4i L3
     "swerve_module_steering_gearing_ratio": 150 / 7,  # SDS Mk4i
 
     "propulsion_motor_inverted": False,
@@ -91,7 +91,7 @@ op_data = {
     "angular_velocity_limit": 2.5 * (u.rad / u.s),
 
     # For NEO / SparkMAX, use the following and comment out the Falcon500 values
-    "propulsion_neutral": rev.SparkMax.IdleMode.kCoast,
+    "propulsion_neutral": rev.SparkMax.IdleMode.kBrake,
     "steering_neutral": rev.SparkMax.IdleMode.kBrake,
     # For Falcon500 / TalonFX, use the following and comment out the NEO values
     # "propulsion_neutral": phoenix5.NeutralMode.Coast,
@@ -124,9 +124,9 @@ sw_data = {
     # Constants for PID control of the propulsion AND steering motors
     # (kP must be non-zero, or azimuth motors won't engage.)
     # "kP": 0.3,  # representative value for Falcon500 motors
-    "kP": 0.01,   # representative value for NEO motors
+    "kP": 0.003,   # representative value for NEO motors
     "kI": 0,
-    "kD": 0,
+    "kD": 0.0,
 
     # Constants for feed-forward of propulsion motors
     "kS": 0,
