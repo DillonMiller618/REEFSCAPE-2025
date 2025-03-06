@@ -28,10 +28,10 @@ class RobotContainer:
         # The Azimuth component included the absolute encoder because it needs
         # to be able to reset to absolute position.
         #
-        self.lf_enc = components.absolute_encoder_class(ELEC.LF_encoder_DIO)
-        self.lb_enc = components.absolute_encoder_class(ELEC.LB_encoder_DIO)
-        self.rb_enc = components.absolute_encoder_class(ELEC.RB_encoder_DIO)
-        self.rf_enc = components.absolute_encoder_class(ELEC.RF_encoder_DIO)
+        self.lf_enc = components.absolute_encoder_class(ELEC.LF_encoder_DIO, MECH.steering_encoder_inverted)
+        self.lb_enc = components.absolute_encoder_class(ELEC.LB_encoder_DIO, MECH.steering_encoder_inverted)
+        self.rb_enc = components.absolute_encoder_class(ELEC.RB_encoder_DIO, MECH.steering_encoder_inverted)
+        self.rf_enc = components.absolute_encoder_class(ELEC.RF_encoder_DIO, MECH.steering_encoder_inverted)
         modules = (
             # Left Front module
             CoaxialSwerveModule(
@@ -41,7 +41,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.LF_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(165),
+                    azimuth_offset=Rotation2d.fromDegrees(296),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.lf_enc,
                 ),
@@ -55,7 +55,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.RF_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(253),
+                    azimuth_offset=Rotation2d.fromDegrees(171),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.rf_enc,
                 ),
@@ -69,7 +69,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.LB_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(246),
+                    azimuth_offset=Rotation2d.fromDegrees(229),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.lb_enc,
                 ),
@@ -83,7 +83,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.RB_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(107),
+                    azimuth_offset=Rotation2d.fromDegrees(252),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.rb_enc,
                 ),
@@ -172,7 +172,7 @@ class RobotContainer:
             xy_kP=1,
         )
 
-        bezier_points = PathPlannerPath.bezierFromPoses(
+        bezier_points = PathPlannerPath.waypointsFromPoses(
             [
                 Pose2d(1.0, 1.0, Rotation2d.fromDegrees(0)),
                 Pose2d(3.0, 1.0, Rotation2d.fromDegrees(0)),
@@ -188,3 +188,9 @@ class RobotContainer:
         first_path = True  # reset robot pose to initial pose in trajectory
         open_loop = True  # don't use built-in motor feedback for velocity
         return self.swerve.follow_trajectory_command(path, follower_params, first_path, open_loop)
+
+    # Configure button bindings here
+    def configure_button_bindings(self):
+        # Reset gyro
+        gyroReset = self.stick.getRawButtonPressed(4) # Triangle
+

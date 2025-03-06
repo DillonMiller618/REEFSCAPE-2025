@@ -33,6 +33,7 @@ mech_data = {
 
     "propulsion_motor_inverted": False,
     "steering_motor_inverted": False,
+    "steering_encoder_inverted": False,
 }
 MECH = namedtuple("Data", mech_data.keys())(**mech_data)
 
@@ -54,18 +55,18 @@ elec_data = {
     "open_loop_ramp_rate": 0.5,
     "closed_loop_ramp_rate": 0.5,
 
-    "RF_steer_CAN_ID": 5,
-    "RF_drive_CAN_ID": 1,
-    "RF_encoder_DIO": 16, # these have been updated to can ids
-    "RB_steer_CAN_ID": 7,
-    "RB_drive_CAN_ID": 3,
-    "RB_encoder_DIO": 18,
-    "LB_steer_CAN_ID": 4,
-    "LB_drive_CAN_ID": 8,
-    "LB_encoder_DIO": 15,
-    "LF_steer_CAN_ID": 2,
-    "LF_drive_CAN_ID": 6,
-    "LF_encoder_DIO": 17,
+    "RF_steer_CAN_ID": 7,
+    "RF_drive_CAN_ID": 3,
+    "RF_encoder_DIO": 18, # these have been updated to can ids
+    "RB_steer_CAN_ID": 5,
+    "RB_drive_CAN_ID": 1,
+    "RB_encoder_DIO": 16,
+    "LB_steer_CAN_ID": 2,
+    "LB_drive_CAN_ID": 6,
+    "LB_encoder_DIO": 17,
+    "LF_steer_CAN_ID": 4,
+    "LF_drive_CAN_ID": 8,
+    "LF_encoder_DIO": 15,
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 
@@ -110,7 +111,7 @@ sw_data = {
     # field_relative: True if "forward" means "down the field"; False if
     # "forward" means "in the direction the robot is facing".  A True value
     # requires a (non-Dummy) gyro.
-    "field_relative": False,
+    "field_relative": True,
 
     # drive_open_loop: True if we're not using PID control *for velocity targeting*,
     # i.e. when a target velocity is calculated, do we use the corresponding
