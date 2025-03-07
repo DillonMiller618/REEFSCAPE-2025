@@ -293,13 +293,17 @@ class SwerveDrive(commands2.Subsystem):
             # Associate each swerve module with a number if no names were provided
             modules = enumerate(self._modules)
 
-        for name, module in modules:  # type: str | int, SwerveModule
+        for name, module in modules:
             (
                 log.motor(str(name))
                 .voltage(module.drive_voltage)
                 .position(module.drive_distance)
                 .velocity(module.drive_velocity)
             )
+
+    def rotate(self, rotSpeed):
+        # Turns the robot in place with rotspeed.
+        self.drive(Translation2d, rotSpeed, True, False)
 
     def teleop_command(
         self,

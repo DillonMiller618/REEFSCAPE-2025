@@ -4,13 +4,15 @@ import logging
 logger = logging.getLogger("your.robot")
 
 import wpilib
+from wpilib import PS4Controller
 from wpimath.geometry import Translation2d, Rotation2d, Pose2d
 from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
+import commands2
 
 from swervepy import u, SwerveDrive, TrajectoryFollowerParameters
 from swervepy.impl import CoaxialSwerveModule
 
-from constants import PHYS, MECH, ELEC, OP, SW
+from constants import PHYS, MECH, ELEC, OP, SW, DS
 import components
 
 
@@ -23,11 +25,12 @@ class RobotContainer:
     """
 
     def __init__(self):
-        gyro = components.gyro_component_class(**components.gyro_param_values)
+        from subsystems.limelight_camera import LimelightCamera
+        self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
+        self.gyro = components.gyro_component_class(**components.gyro_param_values)
 
         # The Azimuth component included the absolute encoder because it needs
         # to be able to reset to absolute position.
-        #
         self.lf_enc = components.absolute_encoder_class(ELEC.LF_encoder_DIO, MECH.steering_encoder_inverted)
         self.lb_enc = components.absolute_encoder_class(ELEC.LB_encoder_DIO, MECH.steering_encoder_inverted)
         self.rb_enc = components.absolute_encoder_class(ELEC.RB_encoder_DIO, MECH.steering_encoder_inverted)
@@ -111,7 +114,7 @@ class RobotContainer:
         # Define a swerve drive subsystem by passing in a list of SwerveModules
         # and some options
         #
-        self.swerve = SwerveDrive(modules, gyro, OP.max_speed, OP.max_angular_velocity)
+        self.swerve = SwerveDrive(modules, self.gyro, OP.max_speed, OP.max_angular_velocity)
 
         # Set the swerve subsystem's default command to teleoperate using
         # the controller joysticks
@@ -190,7 +193,33 @@ class RobotContainer:
         return self.swerve.follow_trajectory_command(path, follower_params, first_path, open_loop)
 
     # Configure button bindings here
+    #TODO: Test this code and see if it works properly (limelight still needs implementation)
     def configure_button_bindings(self):
-        # Reset gyro
-        gyroReset = self.stick.getRawButtonPressed(4) # Triangle
+        def turn_to_object():
+            x = self.camera.getX()
+            print(f"x={x}")
+            turn_speed = -0.005 * x
+            self.swerve.rotate(turn_speed)
+            # if you want your robot to slowly chase that object... replace this line above with: self.robotDrive.arcadeDrive(0.1, turn_speed)
 
+            bButton = self.driverController.button(PS4Controller.Button.kSquare)
+            bButton.whileTrue(commands2.RunCommand(turn_to_object, self.swerve.drive))
+            bButton.onFalse(commands2.InstantCommand(lambda: self.swerve.drive(0, 0, False, False)))
+
+        # Initialize a seperate controller, on the same port, so I can more easily use bindings, and for code verbosity
+        self.driverController = commands2.button.CommandGenericHID(DS.kDriverControllerPort)
+        self.buttonboard = commands2.button.CommandGenericHID(DS.kButtonBoardPort)
+        
+        # Resets gyro heading
+        gyroReset = self.driverController.button(PS4Controller.Button.kTriangle)
+        gyroReset.onTrue(self.gyro.zero_heading())
+
+        # Climber up/down
+        climberup = self.buttonboard.button(1) #TODO: Change this ID
+        climberdown = self.buttonboard.button(2) #TODO: Change this ID
+
+        climberup.onTrue() #TODO: Implement Climber subsystem and commands
+        climberdown.onTrue() #TODO: Implement Climber subsystem and commands
+
+
+    

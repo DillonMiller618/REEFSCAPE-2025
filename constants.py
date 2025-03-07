@@ -135,3 +135,9 @@ sw_data = {
     "kA": 0,
 }
 SW = namedtuple("Data", sw_data.keys())(**sw_data)
+
+DS_data = {
+    "kDriverControllerPort": 0,
+    "kButtonBoardPort": 1,
+}
+DS = namedtuple("Data", op_data.keys())(**op_data)
