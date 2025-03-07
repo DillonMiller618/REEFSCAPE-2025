@@ -67,6 +67,8 @@ elec_data = {
     "LF_steer_CAN_ID": 4,
     "LF_drive_CAN_ID": 8,
     "LF_encoder_DIO": 15,
+
+    "Climber_CAN_ID": 9, #TODO: get actual CAN ID
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 
@@ -125,9 +127,9 @@ sw_data = {
     # Constants for PID control of the propulsion AND steering motors
     # (kP must be non-zero, or azimuth motors won't engage.)
     # "kP": 0.3,  # representative value for Falcon500 motors
-    "kP": 0.003,   # representative value for NEO motors
+    "kP": 0.006,   # representative value for NEO motors
     "kI": 0,
-    "kD": 0.0,
+    "kD": 0.001,
 
     # Constants for feed-forward of propulsion motors
     "kS": 0,
@@ -140,4 +142,4 @@ DS_data = {
     "kDriverControllerPort": 0,
     "kButtonBoardPort": 1,
 }
-DS = namedtuple("Data", op_data.keys())(**op_data)
+DS = namedtuple("Data", DS_data.keys())(**DS_data)

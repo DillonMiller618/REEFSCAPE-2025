@@ -4,4 +4,5 @@ robotpy-rev
 robotpy-phoenix5
 robotpy-phoenix6
 robotpy-pathplannerlib
+robotpy-pyntcore
 wpilib==2025.2.1

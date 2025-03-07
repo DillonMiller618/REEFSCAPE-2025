@@ -14,6 +14,7 @@ from swervepy.impl import CoaxialSwerveModule
 
 from constants import PHYS, MECH, ELEC, OP, SW, DS
 import components
+from commands import miscdriver, climberupdown
 
 
 class RobotContainer:
@@ -26,8 +27,14 @@ class RobotContainer:
 
     def __init__(self):
         from subsystems.limelight_camera import LimelightCamera
-        self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
+        from subsystems.climber import Climber
+        
         self.gyro = components.gyro_component_class(**components.gyro_param_values)
+
+        #initialize subsystems
+        self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
+
+        self.configure_button_bindings()
 
         # The Azimuth component included the absolute encoder because it needs
         # to be able to reset to absolute position.
@@ -194,6 +201,7 @@ class RobotContainer:
 
     # Configure button bindings here
     #TODO: Test this code and see if it works properly (limelight still needs implementation)
+    
     def configure_button_bindings(self):
         def turn_to_object():
             x = self.camera.getX()
@@ -212,14 +220,14 @@ class RobotContainer:
         
         # Resets gyro heading
         gyroReset = self.driverController.button(PS4Controller.Button.kTriangle)
-        gyroReset.onTrue(self.gyro.zero_heading())
+        gyroReset.onTrue(miscdriver.ResetGyro(self.gyro))
 
         # Climber up/down
         climberup = self.buttonboard.button(1) #TODO: Change this ID
         climberdown = self.buttonboard.button(2) #TODO: Change this ID
 
-        climberup.onTrue() #TODO: Implement Climber subsystem and commands
-        climberdown.onTrue() #TODO: Implement Climber subsystem and commands
+        climberup.onTrue(climberupdown(1)) #TODO: Implement Climber subsystem and commands
+        climberdown.onTrue(climberupdown(-1)) #TODO: Implement Climber subsystem and commands
 
 
     

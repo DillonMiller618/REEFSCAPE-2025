@@ -1,6 +1,5 @@
 # SMART #6932 REEFSCAPE-2025
-#### This code is a fork of [SwervePy](https://github.com/EWall25/swervepy), a framwork that we're using for our drivetrain. We take no credit for the framework. Guides are below for how to properly add subsystems to the repository.
-#### (some changes are needed)
+#### This code is a fork of [SwervePy](https://github.com/EWall25/swervepy) and Gene Panov's [CommandRevSwerve](https://github.com/epanov1602/CommandRevSwerve/tree/main) repositories. We take no credit for any of the swerve or docs.
 
 ## Requirements
 - Robotpy (latest)

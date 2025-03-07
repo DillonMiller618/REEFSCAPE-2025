@@ -19,12 +19,11 @@ robotpy_extras = [
     "pathplannerlib",
     "phoenix5",
     "phoenix6",
-    # "playingwithfusion"
+    "pyntcore",
     "rev",
     # "romi"
     # "sim"
     # "xrp"
-    "pyntcore,
 ]
 
 # Other pip packages to install
