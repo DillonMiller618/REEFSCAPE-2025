@@ -42,8 +42,10 @@ elec_data = {
     # These current limit parameters are per-motor in the swerve modules
     "drive_continuous_current_limit": 40,
     "azimuth_continuous_current_limit": 30,
+    "climber_continuous_current_limit": 20,
     "drive_peak_current_limit": 60,
     "azimuth_peak_current_limit": 40,
+    "climber_peak_current_limit": 30,
 
     # Talon FX motor controllers can set peak_current_duration.
     # SparkMAX motor controllers can't.
@@ -68,7 +70,8 @@ elec_data = {
     "LF_drive_CAN_ID": 8,
     "LF_encoder_DIO": 15,
 
-    "Climber_CAN_ID": 9, #TODO: get actual CAN ID
+    "Climber_CAN_ID": 10, #TODO: get actual CAN ID
+    "Elevator_Lead_CAN_ID": 9
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 

@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger("your.robot")
 
+from rev import SparkMax
 import wpilib
 from wpilib import PS4Controller
 from wpimath.geometry import Translation2d, Rotation2d, Pose2d
@@ -14,7 +15,8 @@ from swervepy.impl import CoaxialSwerveModule
 
 from constants import PHYS, MECH, ELEC, OP, SW, DS
 import components
-from commands import miscdriver, climberupdown
+from commands import elevatormove, miscdriver, climberupdown
+from commands2 import InstantCommand, RunCommand
 
 
 class RobotContainer:
@@ -28,11 +30,15 @@ class RobotContainer:
     def __init__(self):
         from subsystems.limelight_camera import LimelightCamera
         from subsystems.climber import Climber
+        from subsystems.elevator import Elevator
         
         self.gyro = components.gyro_component_class(**components.gyro_param_values)
 
         #initialize subsystems
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
+
+        #self.climber = Climber(ELEC.Climber_CAN_ID)
+        self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
 
         self.configure_button_bindings()
 
@@ -223,11 +229,28 @@ class RobotContainer:
         gyroReset.onTrue(miscdriver.ResetGyro(self.gyro))
 
         # Climber up/down
-        climberup = self.buttonboard.button(1) #TODO: Change this ID
-        climberdown = self.buttonboard.button(2) #TODO: Change this ID
+        climberup = self.driverController.pov(0) #TODO: Change this ID
+        climberdown = self.driverController.pov(180) #TODO: Change this ID
 
-        climberup.onTrue(climberupdown(1)) #TODO: Implement Climber subsystem and commands
-        climberdown.onTrue(climberupdown(-1)) #TODO: Implement Climber subsystem and commands
+        # climberup.whileTrue(climberupdown.ClimberMove(1, self.climber)) #TODO: Implement Climber subsystem and commands
+        # climberdown.whileTrue(climberupdown.ClimberMove(-1, self.climber)) #TODO: Implement Climber subsystem and commands
+
+        # right stick of the joystick to move the elevator up and down 
+        # self.elevator.setDefaultCommand(
+        #     commands2.RunCommand(lambda: self.elevator.drive(
+        #         self.driverController.getRawAxis(XboxController.Axis.kRightY)
+        #     ), self.elevator)
+        # )
+
+        # left bumper and right bumper will move elevator between presetSwitchPositions (see above) 
+        leftBumper = self.driverController.button(PS4Controller.Button.kL1)
+        leftBumper.onTrue(InstantCommand(self.elevator.switchUp, self.elevator))
+        rightBumper = self.driverController.button(PS4Controller.Button.kR1)
+        rightBumper.onTrue(InstantCommand(self.elevator.switchDown, self.elevator))
+
+        # the "A" button will request elevator to go to a special position of 33.0 inches
+        aButton = self.driverController.button(PS4Controller.Button.kCross)
+        aButton.onTrue(InstantCommand(lambda: self.elevator.setPositionGoal(33.0), self.elevator))
 
 
     
