@@ -3,8 +3,7 @@
 # the WPILib BSD license file in the root directory of this project.
 
 """
-The constants module is a convenience place for teams to hold robot-wide
-numerical or boolean constants. Don't use this for any other purpose!
+This file is deprecated, it is only used for reference values of our swerve modules. Do not reference this file.
 """
 
 
@@ -16,9 +15,7 @@ from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
 
 from rev import SparkBase, SparkBaseConfig, ClosedLoopConfig
-import phoenix6.hardware.cancoder
 
-phoenix6.hardware.CANcoder(1, "rio")
 
 class NeoMotorConstants:
     kFreeSpeedRpm = 5676

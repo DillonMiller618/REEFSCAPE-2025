@@ -71,7 +71,8 @@ elec_data = {
     "LF_encoder_DIO": 15,
 
     "Climber_CAN_ID": 10, #TODO: get actual CAN ID
-    "Elevator_Lead_CAN_ID": 9
+    "Elevator_Lead_CAN_ID": 9,
+    "Arm_Lead_CAN_ID": 11,
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 

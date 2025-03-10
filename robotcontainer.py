@@ -28,17 +28,24 @@ class RobotContainer:
     """
 
     def __init__(self):
+        #other imports, TODO: Will move these
         from subsystems.limelight_camera import LimelightCamera
         from subsystems.climber import Climber
-        from subsystems.elevator import Elevator
+        from subsystems.elevator import Elevator, ElevatorConstants
+        from subsystems.arm import Arm, ArmConstants
         
         self.gyro = components.gyro_component_class(**components.gyro_param_values)
 
         #initialize subsystems
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
 
-        #self.climber = Climber(ELEC.Climber_CAN_ID)
+        self.climber = Climber(ELEC.Climber_CAN_ID)
         self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
+        self.arm = Arm(ELEC.Arm_Lead_CAN_ID) # CANIds.kArmMotorLeft, True
+
+        # to access in configure_button_bindings
+        self.armconsts = ArmConstants
+        self.elevatorconsts = ElevatorConstants
 
         self.configure_button_bindings()
 
@@ -209,6 +216,46 @@ class RobotContainer:
     #TODO: Test this code and see if it works properly (limelight still needs implementation)
     
     def configure_button_bindings(self):
+        """
+        Configures and checks for button presses. Below are all the functions that each 
+        button does on a PS4 Controller, and the button board. Update this regularly.
+
+        Analog or Digital Sticks
+        PS4 Right Stick (not here, in swervepy): Stationary drive rotation TODO: Switch axes in code
+        PS4 Left Stick (not here, in swervepy): Swerve Drive TODO: Switch axes in code
+        Button Board Stick Vertical: Move elevator up and down at a constant rate
+        Button Board Stick Horizontal: not implemented
+
+        Bumpers and triggers (PS4)
+        Left Bumper (L1): Moves to preset switch position (should be top) TODO: check this
+        Right Bumper (R1): Moves to preset switch position (should be bottom) TODO: check this
+        Left Analog Trigger (L2): not implemented
+        Right Analog Trigger (R2): not implemented
+
+        Buttons (PS4)
+        Cross: Turn arm to set zero point
+        Square: turn to apriltag
+        Circle: Turn arm to set scoring point (45)
+        Triangle: Reset gyro heading
+
+        povUp: Climber up (moves the robot down)
+        povDown: Climber down (moves the robot up)
+        povLeft: not implemented
+        povRight: not implemented
+        (no diagonals are used)
+
+        Buttons (Button Board)
+        ID1: not implemented
+        ID2: not implemented
+        ID3: Move elevator to 33 inches TODO: change this to buttonboard for each height of coral
+        ID4:
+        ID5:
+        ID6:
+        ID7:
+        ID8:
+        ID9:
+        ID10:
+        """
         def turn_to_object():
             x = self.camera.getX()
             print(f"x={x}")
@@ -223,24 +270,25 @@ class RobotContainer:
         # Initialize a seperate controller, on the same port, so I can more easily use bindings, and for code verbosity
         self.driverController = commands2.button.CommandGenericHID(DS.kDriverControllerPort)
         self.buttonboard = commands2.button.CommandGenericHID(DS.kButtonBoardPort)
+        self.elevatoraxis = 1 #buttonboard
         
         # Resets gyro heading
         gyroReset = self.driverController.button(PS4Controller.Button.kTriangle)
         gyroReset.onTrue(miscdriver.ResetGyro(self.gyro))
 
         # Climber up/down
-        climberup = self.driverController.pov(0) #TODO: Change this ID
-        climberdown = self.driverController.pov(180) #TODO: Change this ID
+        climberup = self.driverController.pov(0)
+        climberdown = self.driverController.pov(180)
 
-        # climberup.whileTrue(climberupdown.ClimberMove(1, self.climber)) #TODO: Implement Climber subsystem and commands
-        # climberdown.whileTrue(climberupdown.ClimberMove(-1, self.climber)) #TODO: Implement Climber subsystem and commands
+        climberup.whileTrue(climberupdown.ClimberMove(1, self.climber))
+        climberdown.whileTrue(climberupdown.ClimberMove(-1, self.climber))
 
         # right stick of the joystick to move the elevator up and down 
-        # self.elevator.setDefaultCommand(
-        #     commands2.RunCommand(lambda: self.elevator.drive(
-        #         self.driverController.getRawAxis(XboxController.Axis.kRightY)
-        #     ), self.elevator)
-        # )
+        self.elevator.setDefaultCommand(
+            commands2.RunCommand(lambda: self.elevator.drive(
+                self.buttonboard.getRawAxis(self.elevatoraxis)
+            ), self.elevator)
+        )
 
         # left bumper and right bumper will move elevator between presetSwitchPositions (see above) 
         leftBumper = self.driverController.button(PS4Controller.Button.kL1)
@@ -248,9 +296,23 @@ class RobotContainer:
         rightBumper = self.driverController.button(PS4Controller.Button.kR1)
         rightBumper.onTrue(InstantCommand(self.elevator.switchDown, self.elevator))
 
-        # the "A" button will request elevator to go to a special position of 33.0 inches
+        # Coral Position moving, and TODO: scoring
+        # TODO: Implement an index to make this code not just copy paste
+        ID4Button = self.buttonboard.button(self.buttonboard.button(4))
+        ID4Button.onTrue(InstantCommand(lambda: self.elevator.setPositionGoal(self.elevatorconsts.L2PositionHeight), self.elevator))
+        
+
+        # Cross moves the arm to the set zero point
         aButton = self.driverController.button(PS4Controller.Button.kCross)
-        aButton.onTrue(InstantCommand(lambda: self.elevator.setPositionGoal(33.0), self.elevator))
+        aButton.onTrue(commands2.InstantCommand(lambda: self.arm.setAngleGoal(self.armconsts.kArmMinAngle)))
+
+        # Circle moves the arm to set score point
+        yButton = self.driverController.button(PS4Controller.Button.kCircle)
+        yButton.onTrue(commands2.InstantCommand(lambda: self.arm.setAngleGoal(self.armconsts.kArmScoringAngle)))
+
+        # x "jiggles" the arm to get pieces unstuck in it
+        # TODO: implement arm jiggle
+
 
 
     

@@ -37,6 +37,11 @@ class ElevatorConstants:
     maxPositionGoal = 32  # inches
     positionTolerance = 0.2  # inches
 
+    # Positions to move the elevator to (might be /4)
+    L2PositionHeight = 33.0 # TODO: Find actual value in testing
+    L3PositionHeight = 45.0 # TODO: Find actual value in testing
+    L4PositionHeight = 60.0 # TODO: Find actual value in testing
+
     # if we have an arm, what is the minimum and maximum safe angle for elevator to move
     # (we don't want to move with arm extended unsafely)
     minArmSafeAngleDegrees = 15
