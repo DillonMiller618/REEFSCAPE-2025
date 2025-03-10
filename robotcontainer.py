@@ -64,7 +64,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.LF_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(296),
+                    azimuth_offset=Rotation2d.fromDegrees(MECH.LF_Encoder_Offset),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.lf_enc,
                 ),
@@ -78,7 +78,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.RF_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(171),
+                    azimuth_offset=Rotation2d.fromDegrees(MECH.RF_Encoder_Offset),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.rf_enc,
                 ),
@@ -92,7 +92,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.LB_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(229),
+                    azimuth_offset=Rotation2d.fromDegrees(MECH.LB_Encoder_Offset),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.lb_enc,
                 ),
@@ -106,7 +106,7 @@ class RobotContainer:
                 ),
                 azimuth=components.azimuth_component_class(
                     id_=ELEC.RB_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(252),
+                    azimuth_offset=Rotation2d.fromDegrees(MECH.RB_Encoder_Offset),
                     parameters=components.azimuth_params,
                     absolute_encoder=self.rb_enc,
                 ),
@@ -178,7 +178,7 @@ class RobotContainer:
         return self.process_joystick_input(raw_stick_val, invert=invert,
                                            limit_ratio=self.speed_limit_ratio)
 
-    def get_strafe_input(self, invert=True):
+    def get_strafe_input(self, invert=False):
         raw_stick_val = self.stick.getRawAxis(OP.strafe_joystick_axis)
         return self.process_joystick_input(raw_stick_val, invert=invert,
                                            limit_ratio=self.speed_limit_ratio)

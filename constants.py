@@ -31,9 +31,14 @@ mech_data = {
     "swerve_module_propulsion_gearing_ratio": 6.12,  # SDS Mk4i L3
     "swerve_module_steering_gearing_ratio": 150 / 7,  # SDS Mk4i
 
-    "propulsion_motor_inverted": False,
+    "propulsion_motor_inverted": True,
     "steering_motor_inverted": False,
     "steering_encoder_inverted": False,
+
+    "RF_Encoder_Offset": 172, #18
+    "RB_Encoder_Offset": 253, #16
+    "LB_Encoder_Offset": 230, #17
+    "LF_Encoder_Offset": 257, #15
 }
 MECH = namedtuple("Data", mech_data.keys())(**mech_data)
 
@@ -87,7 +92,7 @@ JOYSTICK_AXES = {
 op_data = {
     # These maximum parameters reflect the maximum physically possible, not the
     # desired maximum limit.
-    "max_speed": 4.5 * (u.m / u.s),
+    "max_speed": 5.0 * (u.m / u.s),
     "max_angular_velocity": 11.5 * (u.rad / u.s),
 
     # You can limit how fast your robot moves (e.g. during testing) using the
@@ -106,9 +111,9 @@ op_data = {
 
     # Values to pass to stick.getRawAxis()
     # Set these according to your operator preferences
-    "translation_joystick_axis": JOYSTICK_AXES["RIGHT_Y"],
-    "strafe_joystick_axis": JOYSTICK_AXES["RIGHT_X"],
-    "rotation_joystick_axis": JOYSTICK_AXES["LEFT_X"],
+    "translation_joystick_axis": JOYSTICK_AXES["LEFT_Y"],
+    "strafe_joystick_axis": JOYSTICK_AXES["LEFT_X"],
+    "rotation_joystick_axis": JOYSTICK_AXES["RIGHT_X"],
 }
 OP = namedtuple("Data", op_data.keys())(**op_data)
 
