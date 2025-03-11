@@ -213,7 +213,7 @@ class RobotContainer:
         return self.swerve.follow_trajectory_command(path, follower_params, first_path, open_loop)
 
     # Configure button bindings here
-    #TODO: Test this code and see if it works properly (limelight still needs implementation)
+    #TODO: Test Limelight code
     
     def configure_button_bindings(self):
         """

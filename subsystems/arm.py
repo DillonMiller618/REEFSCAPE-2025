@@ -87,8 +87,8 @@ class Arm(Subsystem):
 
         # now initialize pid controller and encoder
         self.pidController = self.leadMotor.getClosedLoopController()
-        self.encoder = self.leadMotor.getAbsoluteEncoder()
-        self.relativeEncoder = self.leadMotor.getEncoder()
+        self.encoder = self.leadMotor.getEncoder() #This should be absolute, we don't have any
+        # self.relativeEncoder = self.leadMotor.getEncoder()
 
         # first angle goal
         self.angleGoal = ArmConstants.kArmMinAngle
@@ -98,7 +98,7 @@ class Arm(Subsystem):
     def periodic(self) -> None:
         SmartDashboard.putNumber(self.armAngleGoalLabel, self.angleGoal)
         SmartDashboard.putNumber(self.armAngleLabel, self.getAngle())
-        SmartDashboard.putNumber(self.armPositionLabel, self.relativeEncoder.getPosition())
+        # SmartDashboard.putNumber(self.armPositionLabel, self.relativeEncoder.getPosition())
         SmartDashboard.putString(self.armStateLabel, self.getState())
 
 

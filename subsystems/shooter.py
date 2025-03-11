@@ -2,20 +2,20 @@ from rev import SparkBaseConfig, SparkMax, SparkMaxConfig, SparkBase
 from commands2 import Subsystem
 from constants import ELEC
 
-class ClimberConstants:
+class ShooterConstants:
     gearRatio = 1
 
     kPositionConversionFactor = 1.0
     kVelocityConversionFactor = 1.0
     #determines max speed of turning motor
-    kMaxPower = 0.5 # max of 1.0
+    kMaxPower = 0.75 # max of 1.0
 
 class Climber(Subsystem):
     def __init__(self, motorCanID: int):
         super().__init__()
 
         # Start class and config, get constants
-        constants = ClimberConstants
+        constants = ShooterConstants
         self.motor = SparkMax(motorCanID, SparkBase.MotorType.kBrushless)
         self.mconfig = SparkBaseConfig()
         # Configure the motor with constants
@@ -29,8 +29,8 @@ class Climber(Subsystem):
         self.mconfig.encoder.velocityConversionFactor(constants.kVelocityConversionFactor)
         self.motor.configure(self.mconfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
 
-    def moveClimber(self, speed):
-        self.motor.set(speed * ClimberConstants.kMaxPower)
+    def spinShooter(self, speed):
+        self.motor.set(speed * ShooterConstants.kMaxPower)
 
-    def stopClimber(self):
+    def stopShooter(self):
         self.motor.stopMotor()

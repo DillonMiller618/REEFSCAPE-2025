@@ -47,10 +47,10 @@ elec_data = {
     # These current limit parameters are per-motor in the swerve modules
     "drive_continuous_current_limit": 40,
     "azimuth_continuous_current_limit": 30,
-    "climber_continuous_current_limit": 20,
+    "vortex_continuous_current_limit": 20,
     "drive_peak_current_limit": 60,
     "azimuth_peak_current_limit": 40,
-    "climber_peak_current_limit": 30,
+    "vortex_peak_current_limit": 30,
 
     # Talon FX motor controllers can set peak_current_duration.
     # SparkMAX motor controllers can't.
