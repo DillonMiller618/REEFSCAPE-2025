@@ -16,6 +16,8 @@ import math
 from collections import namedtuple
 import rev, phoenix5
 from wpimath.trajectory import TrapezoidProfileRadians
+from wpimath.kinematics import SwerveDrive4Kinematics
+from wpimath.geometry import Translation2d
 
 from swervepy import u
 
@@ -27,6 +29,13 @@ phys_data = {
     "wheel_circumference": 4 * math.pi * u.inch,
 }
 PHYS = namedtuple("Data", phys_data.keys())(**phys_data)
+
+kModulePositions = [
+    Translation2d(phys_data["wheel_base"] / 2, phys_data["track_width"] / 2),
+    Translation2d(phys_data["wheel_base"] / 2, -phys_data["track_width"] / 2),
+    Translation2d(-phys_data["wheel_base"] / 2, phys_data["track_width"] / 2),
+    Translation2d(-phys_data["wheel_base"] / 2, -phys_data["track_width"] / 2),
+],
 
 # Mechanical constants
 mech_data = {
@@ -41,6 +50,10 @@ mech_data = {
     "RB_Encoder_Offset": 253, #16
     "LB_Encoder_Offset": 230, #17
     "LF_Encoder_Offset": 257, #15
+
+    #should be in phys, but meh
+    "kDriveKinematics": SwerveDrive4Kinematics(*kModulePositions)
+    
 }
 MECH = namedtuple("Data", mech_data.keys())(**mech_data)
 
