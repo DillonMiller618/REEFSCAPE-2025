@@ -14,9 +14,11 @@ This file defines constants related to your robot.  These constants include:
 
 import math
 from collections import namedtuple
-import rev
-import phoenix5
+import rev, phoenix5
+from wpimath.trajectory import TrapezoidProfileRadians
+
 from swervepy import u
+
 
 # Physical constants
 phys_data = {
@@ -75,9 +77,10 @@ elec_data = {
     "LF_drive_CAN_ID": 8,
     "LF_encoder_DIO": 15,
 
-    "Climber_CAN_ID": 10, #TODO: get actual CAN ID
-    "Elevator_Lead_CAN_ID": 9,
-    "Arm_Lead_CAN_ID": 11,
+    "Climber_CAN_ID": 12, #TODO: Tune to actual robot
+    "Elevator_Lead_CAN_ID": 9, #TODO: Tune to actual robot
+    "Arm_Lead_CAN_ID": 11, #TODO: Tune to actual robot
+    "Shooter_Lead_CAN_ID": 13, #TODO: Tune to actual robot
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 
@@ -152,3 +155,21 @@ DS_data = {
     "kButtonBoardPort": 1,
 }
 DS = namedtuple("Data", DS_data.keys())(**DS_data)
+
+AUTO_data = {
+    "kUseSqrtControl": True,  # improves arrival time and precision for simple driving commands
+
+    # below are really trajectory constants
+    "kMaxSpeedMetersPerSecond": 3,
+    "kMaxAccelerationMetersPerSecondSquared": 3,
+    "kMaxAngularSpeedRadiansPerSecond": math.pi,
+    "kMaxAngularSpeedRadiansPerSecondSquared": math.pi,
+
+    "kPXController": 1,
+    "kPYController": 1,
+    "kPThetaController": 1,
+
+    # Constraint for the motion profiled robot angle controller
+    "kThetaControllerConstraints": TrapezoidProfileRadians.Constraints(math.pi, math.pi),
+}
+AUTO = namedtuple("Data", AUTO_data.keys())(**AUTO_data)

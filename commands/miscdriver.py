@@ -1,6 +1,8 @@
 import commands2 
 
 
+#This file is ONLY for driver commands that don't fit into the position commands that are required for scoring.
+
 class ResetGyro(commands2.Command):
     def __init__(self, gyro):
         """
@@ -17,11 +19,11 @@ class ResetGyro(commands2.Command):
         return True
     
     def execute(self):
-        ...
+        pass
         #does it in initialize
     
     def end(self, interruped: bool):
-        ...
+        pass
         #instant command, nothing here
 
 

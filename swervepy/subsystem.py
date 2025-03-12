@@ -397,6 +397,16 @@ class SwerveDrive(commands2.Subsystem):
         :param direction: The direction the robot will drive
         """
         return self._sysid_routine.dynamic(direction)
+    
+    def arcadeDrive(
+        self,
+        xSpeed: float,
+        rot: float,
+        assumeManualInput: bool = False,
+    ) -> None:
+        translation = Translation2d(xSpeed, 0)
+        self.drive(translation, rot, False, False) #TODO: Check this
+
 
 
 class _TeleOpCommand(commands2.Command):
@@ -470,3 +480,5 @@ def should_flip_path() -> bool:
     # This will flip the path being followed to the red side of the field.
     # THE ORIGIN WILL REMAIN ON THE BLUE SIDE
     return wpilib.DriverStation.getAlliance() is wpilib.DriverStation.Alliance.kRed
+
+

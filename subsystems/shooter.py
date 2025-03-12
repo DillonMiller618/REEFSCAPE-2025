@@ -1,3 +1,4 @@
+from wpilib import AnalogInput, RobotController
 from rev import SparkBaseConfig, SparkMax, SparkMaxConfig, SparkBase
 from commands2 import Subsystem
 from constants import ELEC
@@ -9,8 +10,11 @@ class ShooterConstants:
     kVelocityConversionFactor = 1.0
     #determines max speed of turning motor
     kMaxPower = 0.75 # max of 1.0
+    kTimeAfterDetect = 0.1 # time interval between first detect of coral entering shooter
 
-class Climber(Subsystem):
+    #Ultrasonic sensor constants
+
+class Shooter(Subsystem):
     def __init__(self, motorCanID: int):
         super().__init__()
 
@@ -29,8 +33,16 @@ class Climber(Subsystem):
         self.mconfig.encoder.velocityConversionFactor(constants.kVelocityConversionFactor)
         self.motor.configure(self.mconfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
 
+        self.ultrasonic = AnalogInput(0)
+        self.voltage_scale_factor = 5/RobotController.getVoltage5V()
+        self.normaldist = self.ultrasonic.getValue() * self.voltage_scale_factor * 0.0492 #in inches
+
     def spinShooter(self, speed):
         self.motor.set(speed * ShooterConstants.kMaxPower)
 
     def stopShooter(self):
         self.motor.stopMotor()
+
+    def feedShooter(self):
+        pass
+        self.currentdist = self.ultrasonic.getValue() * self.voltage_scale_factor * 0.0492 #in inches

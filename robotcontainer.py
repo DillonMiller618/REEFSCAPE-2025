@@ -15,7 +15,7 @@ from swervepy.impl import CoaxialSwerveModule
 
 from constants import PHYS, MECH, ELEC, OP, SW, DS
 import components
-from commands import elevatormove, miscdriver, climberupdown
+from commands import elevatormove, miscdriver, simplecommands
 from commands2 import InstantCommand, RunCommand
 
 
@@ -33,6 +33,7 @@ class RobotContainer:
         from subsystems.climber import Climber
         from subsystems.elevator import Elevator, ElevatorConstants
         from subsystems.arm import Arm, ArmConstants
+        from subsystems.shooter import Shooter
         
         self.gyro = components.gyro_component_class(**components.gyro_param_values)
 
@@ -42,6 +43,7 @@ class RobotContainer:
         self.climber = Climber(ELEC.Climber_CAN_ID)
         self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
         self.arm = Arm(ELEC.Arm_Lead_CAN_ID) # CANIds.kArmMotorLeft, True
+        self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID)
 
         # to access in configure_button_bindings
         self.armconsts = ArmConstants
@@ -280,8 +282,8 @@ class RobotContainer:
         climberup = self.driverController.pov(0)
         climberdown = self.driverController.pov(180)
 
-        climberup.whileTrue(climberupdown.ClimberMove(1, self.climber))
-        climberdown.whileTrue(climberupdown.ClimberMove(-1, self.climber))
+        climberup.whileTrue(simplecommands.ClimberMove(1, self.climber))
+        climberdown.whileTrue(simplecommands.ClimberMove(-1, self.climber))
 
         # right stick of the joystick to move the elevator up and down 
         self.elevator.setDefaultCommand(
