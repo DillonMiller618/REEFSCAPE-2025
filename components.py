@@ -84,7 +84,7 @@ gyro_param_values = {
     #     (default False)
     #
     # Add your gyro constructor params here.
-    "id_": 13,
+    "id_": 20,
     "invert": True,
 }
 

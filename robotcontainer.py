@@ -216,7 +216,24 @@ class RobotContainer:
 
     # Configure button bindings here
     #TODO: Test Limelight code
-    
+    """
+    def makeAlignWithAprilTagCommand(self):
+        from commands.drive.setcamerapipeline import SetCameraPipeline
+        from commands.drive.followobject import FollowObject, StopWhen
+        from commands.drive.approach import ApproachTag
+        from commands.drive.swervetopoint import SwerveToSide
+
+        # switch to camera pipeline 3, to start looking for certain kind of AprilTags
+        lookForTheseTags = SetCameraPipeline(self.camera, 3)
+        approachTheTag = FollowObject(self.camera, self.swerve, stopWhen=StopWhen(maxSize=4), speed=0.3)  # stop when tag size=4 (4% of the frame pixels)
+        alignAndPush = ApproachTag(self.camera, self.swerve, None, speed=0.5, pushForwardSeconds=1.0)  # tuning this at speed=0.5, should be comfortable setting speed=1.0 instead
+
+        # or you can do this, if you want to score the coral 15 centimeters to the right and two centimeters back from the AprilTag
+        stepToSide = SwerveToSide(drivetrain=self.swerve, metersToTheLeft=-0.15, metersBackwards=0.02, speed=0.2)
+        alignToScore = lookForTheseTags.andThen(approachTheTag).andThen(alignAndPush).andThen(stepToSide)
+
+        return alignToScore
+    """
     def configure_button_bindings(self):
         """
         Configures and checks for button presses. Below are all the functions that each 

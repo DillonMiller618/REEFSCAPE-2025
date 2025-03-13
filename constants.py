@@ -77,23 +77,23 @@ elec_data = {
     "open_loop_ramp_rate": 0.5,
     "closed_loop_ramp_rate": 0.5,
 
-    "RF_steer_CAN_ID": 7,
-    "RF_drive_CAN_ID": 3,
-    "RF_encoder_DIO": 18, # these have been updated to can ids
-    "RB_steer_CAN_ID": 5,
+    "RF_steer_CAN_ID": 9,
+    "RF_drive_CAN_ID": 8,
+    "RF_encoder_DIO": 17, # these have been updated to can ids
+    "RB_steer_CAN_ID": 2,
     "RB_drive_CAN_ID": 1,
     "RB_encoder_DIO": 16,
-    "LB_steer_CAN_ID": 2,
-    "LB_drive_CAN_ID": 6,
-    "LB_encoder_DIO": 17,
-    "LF_steer_CAN_ID": 4,
-    "LF_drive_CAN_ID": 8,
-    "LF_encoder_DIO": 15,
+    "LB_steer_CAN_ID": 4,
+    "LB_drive_CAN_ID": 3,
+    "LB_encoder_DIO": 18,
+    "LF_steer_CAN_ID": 6,
+    "LF_drive_CAN_ID": 5,
+    "LF_encoder_DIO": 19,
 
-    "Climber_CAN_ID": 12, #TODO: Tune to actual robot
-    "Elevator_Lead_CAN_ID": 9, #TODO: Tune to actual robot
-    "Arm_Lead_CAN_ID": 11, #TODO: Tune to actual robot
-    "Shooter_Lead_CAN_ID": 13, #TODO: Tune to actual robot
+    "Climber_CAN_ID": 12,
+    "Elevator_Lead_CAN_ID": 7, 
+    "Arm_Lead_CAN_ID": 11, 
+    "Shooter_Lead_CAN_ID": 10, 
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 
