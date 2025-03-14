@@ -15,12 +15,14 @@ class ShooterConstants:
     #Ultrasonic sensor constants
 
 class Shooter(Subsystem):
-    def __init__(self, motorCanID: int):
+    def __init__(self, motorCanID: int, followMotorCANID: int | None):
         super().__init__()
 
+        if followMotorCANID is not None:
+            self.isfollowMotor = True
         # Start class and config, get constants
         constants = ShooterConstants
-        self.motor = SparkMax(motorCanID, SparkBase.MotorType.kBrushless)
+        self.motor = SparkMax(motorCanID, SparkBase.MotorType.kBrushless)        
         self.mconfig = SparkBaseConfig()
         # Configure the motor with constants
         self.mconfig.inverted(False)
@@ -32,17 +34,32 @@ class Shooter(Subsystem):
         self.mconfig.encoder.positionConversionFactor(constants.kPositionConversionFactor)
         self.mconfig.encoder.velocityConversionFactor(constants.kVelocityConversionFactor)
         self.motor.configure(self.mconfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
+        
+        if self.isfollowMotor:
+            self.followmotor = SparkMax(followMotorCANID, SparkBase.MotorType.kBrushless)
+            self.m2config = SparkMaxConfig()
+            self.m2config.follow(motorCanID, invert=True)
+            self.followmotor.configure(self.m2config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
 
-        self.ultrasonic = AnalogInput(0)
-        self.voltage_scale_factor = 5/RobotController.getVoltage5V()
-        self.normaldist = self.ultrasonic.getValue() * self.voltage_scale_factor * 0.0492 #in inches
+        #self.ultrasonic = AnalogInput(0)
+        #self.voltage_scale_factor = 5/RobotController.getVoltage5V()
+        #self.normaldist = self.ultrasonic.getValue() * self.voltage_scale_factor * 0.0492 #in inches
 
     def spinShooter(self, speed):
         self.motor.set(speed * ShooterConstants.kMaxPower)
+        if self.isfollowMotor:
+            print("followmotor")
+            self.followmotor.set(speed * ShooterConstants.kMaxPower)
 
     def stopShooter(self):
-        self.motor.stopMotor()
-
+        self.motor.stopMotor()        
+        if self.isfollowMotor:
+            print("stopfollowmotor")
+            self.followmotor.stopMotor()
+            
+    """
+    #deprecated for the time being
     def feedShooter(self):
         pass
         self.currentdist = self.ultrasonic.getValue() * self.voltage_scale_factor * 0.0492 #in inches
+    """

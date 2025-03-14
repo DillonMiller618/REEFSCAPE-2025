@@ -42,8 +42,8 @@ class RobotContainer:
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
         self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
-        self.arm = Arm(ELEC.Arm_Lead_CAN_ID, None) # CANIds.kArmMotorLeft, True
-        self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID)
+        self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID, None) # CANIds.kArmMotorLeft, True
+        self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID, ELEC.Shooter_Follow_CAN_ID)  
 
         # to access in configure_button_bindings
         self.armconsts = ArmConstants
@@ -53,6 +53,7 @@ class RobotContainer:
 
         # The Azimuth component included the absolute encoder because it needs
         # to be able to reset to absolute position.
+        
         self.lf_enc = components.absolute_encoder_class(ELEC.LF_encoder_DIO, MECH.steering_encoder_inverted)
         self.lb_enc = components.absolute_encoder_class(ELEC.LB_encoder_DIO, MECH.steering_encoder_inverted)
         self.rb_enc = components.absolute_encoder_class(ELEC.RB_encoder_DIO, MECH.steering_encoder_inverted)
@@ -150,6 +151,7 @@ class RobotContainer:
                 drive_open_loop=SW.drive_open_loop,
             )
         )
+        
 
     def log_data(self):
         for pos in ("LF", "RF", "LB", "RB"):
@@ -189,7 +191,7 @@ class RobotContainer:
         raw_stick_val = self.stick.getRawAxis(OP.rotation_joystick_axis)
         return self.process_joystick_input(
             raw_stick_val, invert=invert, limit_ratio=self.angular_velocity_limit_ratio)
-
+    
     def get_autonomous_command(self):
         follower_params = TrajectoryFollowerParameters(
             max_drive_velocity=4.5 * (u.m / u.s),
@@ -213,10 +215,10 @@ class RobotContainer:
         first_path = True  # reset robot pose to initial pose in trajectory
         open_loop = True  # don't use built-in motor feedback for velocity
         return self.swerve.follow_trajectory_command(path, follower_params, first_path, open_loop)
-
+    
     # Configure button bindings here
     #TODO: Test Limelight code
-    """
+    
     def makeAlignWithAprilTagCommand(self):
         from commands.drive.setcamerapipeline import SetCameraPipeline
         from commands.drive.followobject import FollowObject, StopWhen
@@ -233,7 +235,7 @@ class RobotContainer:
         alignToScore = lookForTheseTags.andThen(approachTheTag).andThen(alignAndPush).andThen(stepToSide)
 
         return alignToScore
-    """
+
     def configure_button_bindings(self):
         """
         Configures and checks for button presses. Below are all the functions that each 
@@ -275,6 +277,7 @@ class RobotContainer:
         ID9:
         ID10:
         """
+        """
         def turn_to_object():
             x = self.camera.getX()
             print(f"x={x}")
@@ -285,7 +288,7 @@ class RobotContainer:
             bButton = self.driverController.button(PS4Controller.Button.kSquare)
             bButton.whileTrue(commands2.RunCommand(turn_to_object, self.swerve.drive))
             bButton.onFalse(commands2.InstantCommand(lambda: self.swerve.drive(0, 0, False, False)))
-
+        """
         # Initialize a seperate controller, on the same port, so I can more easily use bindings, and for code verbosity
         self.driverController = commands2.button.CommandGenericHID(DS.kDriverControllerPort)
         self.buttonboard = commands2.button.CommandGenericHID(DS.kButtonBoardPort)
@@ -302,12 +305,14 @@ class RobotContainer:
         climberup.whileTrue(simplecommands.ClimberMove(1, self.climber))
         climberdown.whileTrue(simplecommands.ClimberMove(-1, self.climber))
         
+        
         # right stick of the joystick to move the elevator up and down 
         self.elevator.setDefaultCommand(
             commands2.RunCommand(lambda: self.elevator.drive(
                 -self.buttonboard.getRawAxis(self.elevatoraxis)
             ), self.elevator)
         )
+        
         
         # left bumper and right bumper will move elevator between presetSwitchPositions (see above) 
         leftBumper = self.driverController.button(PS4Controller.Button.kL1)
@@ -321,13 +326,19 @@ class RobotContainer:
         ID4Button.onTrue(InstantCommand(lambda: self.elevator.setPositionGoal(self.elevatorconsts.L2PositionHeight), self.elevator))
         
 
-        # Cross moves the arm to the set zero point
-        aButton = self.driverController.button(PS4Controller.Button.kCross)
-        aButton.onTrue(commands2.InstantCommand(lambda: self.arm.setAngleGoal(self.armconsts.kArmMinAngle)))
+        # Cross moves the coral manip to the set zero point
+        crossButton = self.driverController.button(PS4Controller.Button.kCross)
+        crossButton.whileTrue(simplecommands.ArmMove(0.2, self.coralmanip))
 
         # Circle moves the arm to set score point
-        yButton = self.driverController.button(PS4Controller.Button.kCircle)
-        yButton.onTrue(commands2.InstantCommand(lambda: self.arm.setAngleGoal(self.armconsts.kArmScoringAngle)))
+        circleButton = self.driverController.button(PS4Controller.Button.kCircle)
+        circleButton.whileTrue(simplecommands.ArmMove(-0.2, self.coralmanip))
+
+        shootButton = self.buttonboard.button(1)
+        feedbutton = self.buttonboard.button(2)
+        shootButton.whileTrue(simplecommands.Shoot(0.5, self.shooter))
+        feedbutton.whileTrue(simplecommands.Shoot(-0.5, self.shooter))
+
 
         # x "jiggles" the arm to get pieces unstuck in it
         # TODO: implement arm jiggle

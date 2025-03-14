@@ -1,6 +1,7 @@
 import commands2
 from subsystems.climber import Climber
 from subsystems.shooter import Shooter
+from subsystems.arm import Arm
 from constants import ELEC
 
 
@@ -28,6 +29,28 @@ class ClimberMove(commands2.Command):
     def end(self, interrupted: bool):
         self.climber.stopClimber()
 
+
+class ArmMove(commands2.Command):
+    def __init__(self, speed: float, arm: Arm):
+        self.arm = arm
+        self.speed = speed
+        self.addRequirements(arm)
+        """
+        Moves the climber at set constant rates. 1 is forward, -1 is backward
+        """
+    
+    def initialize(self):
+        pass
+        #add code to set arm to setpoint
+
+    def isFinished(self) -> bool:
+        return False
+    
+    def execute(self):
+        self.arm.startArm(self.speed)
+    
+    def end(self, interrupted: bool):
+        self.arm.stopAndReset()
 
 #shooter commands
 class Shoot(commands2.Command):

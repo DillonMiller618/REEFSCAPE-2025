@@ -15,9 +15,9 @@ class ArmConstants:
     kEncoderPositionToVelocityFactor = 1.0 / 60
 
     # calculating how many motor revolutions are needed to move arm by one degree
-    chainSprocket = 60  # teeth
-    driveSprocket = 14  # teeth
-    gearReduction = 12.0
+    chainSprocket = 1  # teeth
+    driveSprocket = 1  # teeth
+    gearReduction = 80.0
     chainReduction = chainSprocket / driveSprocket
     fudgeFactor = 1  # empirical, if needed
     motorRevolutionsPerDegree = gearReduction * chainReduction / 360 * fudgeFactor
@@ -30,8 +30,8 @@ class ArmConstants:
 
     # PID coefficients
     initialStaticGainTimesP = 3.5  # we are normally this many degrees off because of static forces
-    initialD = 25e-2 * 0.2
-    initialP = 0.8e-2 * 1.0
+    initialD = 0.0
+    initialP = .3
     additionalPMult = 3.0  # when close to target angle
 
     initialMaxOutput = 1
@@ -98,7 +98,7 @@ class Arm(Subsystem):
     def periodic(self) -> None:
         SmartDashboard.putNumber(self.armAngleGoalLabel, self.angleGoal)
         SmartDashboard.putNumber(self.armAngleLabel, self.getAngle())
-        # SmartDashboard.putNumber(self.armPositionLabel, self.relativeEncoder.getPosition())
+        SmartDashboard.putNumber("MinAngle", ArmConstants.kArmMinAngle)
         SmartDashboard.putString(self.armStateLabel, self.getState())
 
 
@@ -129,23 +129,32 @@ class Arm(Subsystem):
 
     def setAngleGoal(self, angle: float) -> None:
         self.angleGoal = angle
+        """
         if self.angleGoal < ArmConstants.kArmMinAngle:
             self.angleGoal = ArmConstants.kArmMinAngle
         if self.angleGoal > ArmConstants.kArmMaxAngle:
             self.angleGoal = ArmConstants.kArmMaxAngle
-
+        
         if self.dontSlam and self.angleGoal <= ArmConstants.kArmMinAngle:
+            
             # we don't want to slam the arm on the floor, but the target angle is pretty low
+            print("1")
             if self.getAngle() > ArmConstants.kArmMinAngle:
+                print("2")
                 self.pidController.setReference(ArmConstants.kArmMinAngle, SparkBase.ControlType.kPosition)
             else:
+                print("2.5")
                 self.stopAndReset()
         else:
+            print("3", self.dontSlam, self.angleGoal)
             # static forces for the arm depend on arm angle (e.g. if it's at the top, no static forces)
             adjustment = ArmConstants.initialStaticGainTimesP * \
                          Rotation2d.fromDegrees(self.angleGoal - ArmConstants.kArmMinAngle).cos()
             self.pidController.setReference(self.angleGoal + adjustment, SparkBase.ControlType.kPosition)
+        """
 
+    def startArm(self, speed):
+        self.leadMotor.set(speed)
 
     def stopAndReset(self) -> None:
         self.leadMotor.stopMotor()
@@ -163,14 +172,14 @@ def _getLeadMotorConfig(
 ) -> SparkBaseConfig:
 
     config = SparkBaseConfig()
-    config.inverted(True)
+    config.inverted(False)
     config.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
-    config.limitSwitch.forwardLimitSwitchEnabled(True)
-    config.limitSwitch.reverseLimitSwitchEnabled(True)
+    config.limitSwitch.forwardLimitSwitchEnabled(False)
+    config.limitSwitch.reverseLimitSwitchEnabled(False)
     config.limitSwitch.forwardLimitSwitchType(limitSwitchType)
     config.limitSwitch.reverseLimitSwitchType(limitSwitchType)
 
-    relPositionFactor = 1.0  # can also make it = 1.0 / ArmConstants.motorRevolutionsPerDegree
+    relPositionFactor = 1.0 / ArmConstants.motorRevolutionsPerDegree
     config.encoder.positionConversionFactor(relPositionFactor)
     config.encoder.velocityConversionFactor(relPositionFactor / 60)  # 60 seconds per minute
 

@@ -88,9 +88,10 @@ elec_data = {
     "LF_encoder_DIO": 17,
 
     "Climber_CAN_ID": 12,
-    "Elevator_Lead_CAN_ID": 7, 
-    "Arm_Lead_CAN_ID": 11, 
-    "Shooter_Lead_CAN_ID": 10, 
+    "Elevator_Lead_CAN_ID": 25, 
+    "Arm_Lead_CAN_ID": 7, 
+    "Shooter_Lead_CAN_ID": 14, 
+    "Shooter_Follow_CAN_ID": 13
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 
