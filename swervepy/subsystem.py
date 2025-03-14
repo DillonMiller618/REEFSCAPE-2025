@@ -30,9 +30,6 @@ if TYPE_CHECKING:
 from swervepy import u
 from swervepy.abstract import SwerveModule, Gyro
 
-#Don't leave this here lol
-from phoenix6.hardware.core.core_pigeon2 import CorePigeon2
-from phoenix6.base_status_signal import StatusSignal
 
 
 class SwerveDrive(commands2.Subsystem):
@@ -410,11 +407,11 @@ class SwerveDrive(commands2.Subsystem):
     ) -> None:
         translation = Translation2d(xSpeed, 0)
         self.drive(translation, rot, False, False) #TODO: Check this
-
+    """
     def getTurnRateDegreesPerSec(self):
-        value = CorePigeon2.get_angular_velocity_z_device()
+        value = self._gyro.
         return value.value() # TODO: Check this, might be completely wrong lmao
-    
+    """
     def stop(self):
         self.arcadeDrive(0, 0)
 

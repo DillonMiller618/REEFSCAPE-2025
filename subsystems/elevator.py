@@ -20,9 +20,9 @@ class ElevatorConstants:
     absEncoderRevolutionsPerInch = motorRevolutionsPerInch / GEAR_RATIO  # is gear ratio == 20?
 
     # other settings
-    leadMotorInverted = True
+    leadMotorInverted = False
     followMotorInverted = False
-    findingZeroSpeed = 0.1
+    findingZeroSpeed = 0.3
 
     # calibrating? (at first, set it =True and calibrate all the constants above)
     calibrating = False
@@ -72,7 +72,7 @@ class Elevator(Subsystem):
         """
         super().__init__()
 
-        self.zeroFound = False
+        self.zeroFound = True
         self.positionGoal = None
         self.positionGoalSwitchIndex = 0
         self.presetSwitchPositions = presetSwitchPositions
@@ -88,7 +88,7 @@ class Elevator(Subsystem):
         )
         leadMotorConfig = _getLeadMotorConfig(
             inverted=ElevatorConstants.leadMotorInverted,
-            limitSwitchType=limitSwitchType,
+            #limitSwitchType=limitSwitchType,
             relPositionFactor=1.0 / ElevatorConstants.motorRevolutionsPerInch,
             absPositionFactor=1.0 / ElevatorConstants.absEncoderRevolutionsPerInch,
             useAbsEncoder=useAbsoluteEncoder
@@ -98,7 +98,7 @@ class Elevator(Subsystem):
             SparkBase.ResetMode.kResetSafeParameters,
             SparkBase.PersistMode.kPersistParameters)
         self.forwardLimit = DigitalInput(0)
-        self.reverseLimit = DigitalInput(1)
+        self.reverseLimit = DigitalInput(9) #check with test
 
         if followMotorCANId is not None:
             self.followMotor = motorClass(
@@ -127,7 +127,13 @@ class Elevator(Subsystem):
         goal = ElevatorConstants.minPositionGoal
         if self.pidController is not None and self.absoluteEncoder is not None:
             goal = self.absoluteEncoder.getPosition()
-        self.setPositionGoal(goal)
+
+        self.leadMotor.set(0)  # zero setpoint now
+        self.leadMotor.clearFaults()
+        self.relativeEncoder.setPosition(0.0)  # reset the relative encoder
+        self.pidController = self.leadMotor.getClosedLoopController()
+        self.setPositionGoal(ElevatorConstants.minPositionGoal)
+        
 
     def switchDown(self):
         if self.presetSwitchPositions:
@@ -199,6 +205,7 @@ class Elevator(Subsystem):
         if self.pidController is None:
             self.leadMotor.set(speed) # if we don't we have a PID controller, we use a speed setpoint
         elif speed != 0: # if we have a PID controller, we control the position goal instead
+            print(speed)
             self.setPositionGoal(self.positionGoal + speed * maxSpeedInchesPerSecond / 50.0)  # we have 50 decisions/sec
 
 
@@ -210,16 +217,15 @@ class Elevator(Subsystem):
         if ElevatorConstants.calibrating or self.unsafeToMove:
             return
         # did we find the zero just now?
-        if self.reverseLimit.get() and not self.forwardLimit.get():
-            print("reversepressed")
-            self.zeroFound = True
-            self.leadMotor.set(0)  # zero setpoint now
-            self.relativeEncoder.setPosition(0.0)  # reset the relative encoder
-            self.pidController = self.leadMotor.getClosedLoopController()
-            self.setPositionGoal(ElevatorConstants.minPositionGoal)
-            return
+        #if self.reverseLimit.get() and not self.forwardLimit.get():
+        self.zeroFound = True
+        self.leadMotor.set(0)  # zero setpoint now
+        self.relativeEncoder.setPosition(0.0)  # reset the relative encoder
+        self.pidController = self.leadMotor.getClosedLoopController()
+        self.setPositionGoal(ElevatorConstants.minPositionGoal)
+        return
         # otherwise, continue finding it
-        self.leadMotor.set(-ElevatorConstants.findingZeroSpeed)
+        # self.leadMotor.set(-ElevatorConstants.findingZeroSpeed)
 
 
     def getState(self) -> str:
@@ -252,6 +258,7 @@ class Elevator(Subsystem):
 
     def periodic(self):
         # 0. if limit switch is pressed and zero has been found, scoot it off the switch a bit
+        """
         if self.zeroFound and self.forwardLimit.get():
             self.leadMotor.set(0)
             self.setPositionGoal(self.getPosition() - 1)
@@ -259,6 +266,7 @@ class Elevator(Subsystem):
         if self.zeroFound and self.reverseLimit.get():
             self.leadMotor.set(0)
             self.setPositionGoal(self.getPosition() + 1)
+        """
 
         # 1. do we need to stop the elevator because arm is at unsafe angle?
         unsafeToMove = self.isUnsafeToMove()
@@ -277,7 +285,7 @@ class Elevator(Subsystem):
 
 def _getLeadMotorConfig(
     inverted: bool,
-    limitSwitchType: LimitSwitchConfig.Type,
+    #limitSwitchType: LimitSwitchConfig.Type,
     relPositionFactor: float,
     absPositionFactor: float,
     useAbsEncoder: bool,
@@ -287,8 +295,8 @@ def _getLeadMotorConfig(
     config.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
     config.limitSwitch.forwardLimitSwitchEnabled(True)
     config.limitSwitch.reverseLimitSwitchEnabled(True)
-    config.limitSwitch.forwardLimitSwitchType(limitSwitchType)
-    config.limitSwitch.reverseLimitSwitchType(limitSwitchType)
+    #config.limitSwitch.forwardLimitSwitchType(limitSwitchType)
+    #config.limitSwitch.reverseLimitSwitchType(limitSwitchType)
     config.encoder.positionConversionFactor(relPositionFactor)
     config.encoder.velocityConversionFactor(relPositionFactor / 60)  # 60 seconds per minute
     if useAbsEncoder:

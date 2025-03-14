@@ -30,12 +30,6 @@ phys_data = {
 }
 PHYS = namedtuple("Data", phys_data.keys())(**phys_data)
 
-kModulePositions = [
-    Translation2d(phys_data["wheel_base"] / 2, phys_data["track_width"] / 2),
-    Translation2d(phys_data["wheel_base"] / 2, -phys_data["track_width"] / 2),
-    Translation2d(-phys_data["wheel_base"] / 2, phys_data["track_width"] / 2),
-    Translation2d(-phys_data["wheel_base"] / 2, -phys_data["track_width"] / 2),
-],
 
 # Mechanical constants
 mech_data = {
@@ -46,13 +40,16 @@ mech_data = {
     "steering_motor_inverted": False,
     "steering_encoder_inverted": False,
 
-    "RF_Encoder_Offset": 172, #18
-    "RB_Encoder_Offset": 253, #16
-    "LB_Encoder_Offset": 230, #17
-    "LF_Encoder_Offset": 257, #15
+    "RF_Encoder_Offset": 320, #19 
+    "RB_Encoder_Offset": 335, #16 
+    "LB_Encoder_Offset": 254, #18 
+    "LF_Encoder_Offset": 338, #17 
 
     #should be in phys, but meh
-    "kDriveKinematics": SwerveDrive4Kinematics(*kModulePositions)
+    "kDriveKinematics": SwerveDrive4Kinematics(Translation2d(phys_data["wheel_base"] / 2, phys_data["track_width"] / 2), 
+                                               Translation2d(phys_data["wheel_base"] / 2, -phys_data["track_width"] / 2), 
+                                               Translation2d(-phys_data["wheel_base"] / 2, phys_data["track_width"] / 2), 
+                                               Translation2d(-phys_data["wheel_base"] / 2, -phys_data["track_width"] / 2))
     
 }
 MECH = namedtuple("Data", mech_data.keys())(**mech_data)
@@ -79,16 +76,16 @@ elec_data = {
 
     "RF_steer_CAN_ID": 9,
     "RF_drive_CAN_ID": 8,
-    "RF_encoder_DIO": 17, # these have been updated to can ids
+    "RF_encoder_DIO": 19, # these have been updated to can ids
     "RB_steer_CAN_ID": 2,
     "RB_drive_CAN_ID": 1,
-    "RB_encoder_DIO": 16,
+    "RB_encoder_DIO": 18,
     "LB_steer_CAN_ID": 4,
     "LB_drive_CAN_ID": 3,
-    "LB_encoder_DIO": 18,
+    "LB_encoder_DIO": 16,
     "LF_steer_CAN_ID": 6,
     "LF_drive_CAN_ID": 5,
-    "LF_encoder_DIO": 19,
+    "LF_encoder_DIO": 17,
 
     "Climber_CAN_ID": 12,
     "Elevator_Lead_CAN_ID": 7, 

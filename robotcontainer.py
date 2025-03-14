@@ -42,7 +42,7 @@ class RobotContainer:
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
         self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
-        self.arm = Arm(ELEC.Arm_Lead_CAN_ID) # CANIds.kArmMotorLeft, True
+        self.arm = Arm(ELEC.Arm_Lead_CAN_ID, None) # CANIds.kArmMotorLeft, True
         self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID)
 
         # to access in configure_button_bindings
@@ -296,28 +296,28 @@ class RobotContainer:
         gyroReset.onTrue(miscdriver.ResetGyro(self.gyro))
 
         # Climber up/down
-        climberup = self.driverController.pov(0)
-        climberdown = self.driverController.pov(180)
+        climberup = self.driverController.pov(180)
+        climberdown = self.driverController.pov(0)
 
         climberup.whileTrue(simplecommands.ClimberMove(1, self.climber))
         climberdown.whileTrue(simplecommands.ClimberMove(-1, self.climber))
-
+        
         # right stick of the joystick to move the elevator up and down 
         self.elevator.setDefaultCommand(
             commands2.RunCommand(lambda: self.elevator.drive(
-                self.buttonboard.getRawAxis(self.elevatoraxis)
+                -self.buttonboard.getRawAxis(self.elevatoraxis)
             ), self.elevator)
         )
-
+        
         # left bumper and right bumper will move elevator between presetSwitchPositions (see above) 
         leftBumper = self.driverController.button(PS4Controller.Button.kL1)
-        leftBumper.onTrue(InstantCommand(self.elevator.switchUp, self.elevator))
+        leftBumper.onTrue(InstantCommand(self.elevator.drive(self.elevatorconsts.L3PositionHeight), self.elevator))
         rightBumper = self.driverController.button(PS4Controller.Button.kR1)
-        rightBumper.onTrue(InstantCommand(self.elevator.switchDown, self.elevator))
+        rightBumper.onTrue(InstantCommand(self.elevator.drive(self.elevatorconsts.L4PositionHeight), self.elevator))
 
         # Coral Position moving, and TODO: scoring
         # TODO: Implement an index to make this code not just copy paste
-        ID4Button = self.buttonboard.button(self.buttonboard.button(4))
+        ID4Button = self.buttonboard.button(4)
         ID4Button.onTrue(InstantCommand(lambda: self.elevator.setPositionGoal(self.elevatorconsts.L2PositionHeight), self.elevator))
         
 
