@@ -110,21 +110,18 @@ op_data = {
     # These maximum parameters reflect the maximum physically possible, not the
     # desired maximum limit.
     "max_speed": 5.0 * (u.m / u.s),
-    "max_angular_velocity": 11.5 * (u.rad / u.s),
+    "max_angular_velocity": 13.5 * (u.rad / u.s), #TODO: Check
 
     # You can limit how fast your robot moves (e.g. during testing) using the
     # following parameters.  Setting to None is the same as setting to
     # max_speed/max_angular_velocity, and indicates no limit.
-    #
-    "speed_limit": 1.0 * (u.m / u.s),
+    
+    "speed_limit": None, #TODO: fix this one day, should not be None
     "angular_velocity_limit": 2.5 * (u.rad / u.s),
 
-    # For NEO / SparkMAX, use the following and comment out the Falcon500 values
+    # For NEO / SparkMAX, use the following
     "propulsion_neutral": rev.SparkMax.IdleMode.kBrake,
     "steering_neutral": rev.SparkMax.IdleMode.kBrake,
-    # For Falcon500 / TalonFX, use the following and comment out the NEO values
-    # "propulsion_neutral": phoenix5.NeutralMode.Coast,
-    # "steering_neutral": phoenix5.NeutralMode.Brake,
 
     # Values to pass to stick.getRawAxis()
     # Set these according to your operator preferences
@@ -153,7 +150,7 @@ sw_data = {
     # Constants for PID control of the propulsion AND steering motors
     # (kP must be non-zero, or azimuth motors won't engage.)
     # "kP": 0.3,  # representative value for Falcon500 motors
-    "kP": 0.006,   # representative value for NEO motors
+    "kP": 0.012,   # representative value for NEO motors
     "kI": 0,
     "kD": 0.001,
 
@@ -170,6 +167,8 @@ DS_data = {
 }
 DS = namedtuple("Data", DS_data.keys())(**DS_data)
 
+
+#DO NOT CHANGE THIS DICT. IT WILL MESS UP AUTOBUILDER.
 AUTO_data = {
     "kUseSqrtControl": True,  # improves arrival time and precision for simple driving commands
 

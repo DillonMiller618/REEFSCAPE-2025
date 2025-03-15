@@ -5,20 +5,16 @@ logger = logging.getLogger("your.robot")
 
 from rev import SparkMax
 import wpilib
-from wpilib import PS4Controller, SmartDashboard
+from wpilib import PS4Controller
+from wpilib.shuffleboard import Shuffleboard
 from wpimath.geometry import Translation2d, Rotation2d, Pose2d
 from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
-#from pathplannerlib import PathPlanner
-from pathplannerlib.auto import AutoBuilder
-from pathplannerlib.controller import PPHolonomicDriveController
-from pathplannerlib.config import RobotConfig, PIDConstants
-from wpilib import DriverStation
 import commands2
 
 from swervepy import u, SwerveDrive, TrajectoryFollowerParameters
 from swervepy.impl import CoaxialSwerveModule
 
-from constants import PHYS, MECH, ELEC, OP, SW, DS
+from constants import PHYS, MECH, ELEC, OP, SW, DS, AUTO
 import components
 from commands import elevatormove, miscdriver, simplecommands
 from commands.drive import resetxy
@@ -143,7 +139,7 @@ class RobotContainer:
         # Define a swerve drive subsystem by passing in a list of SwerveModules
         # and some options
         #
-        self.swerve = SwerveDrive(modules, self.gyro, OP.max_speed, OP.max_angular_velocity)
+        self.swerve = SwerveDrive(modules, self.gyro, OP.max_speed, OP.max_angular_velocity, path_following_params=AUTO)
 
         # Set the swerve subsystem's default command to teleoperate using
         # the controller joysticks
@@ -197,50 +193,11 @@ class RobotContainer:
         raw_stick_val = self.stick.getRawAxis(OP.rotation_joystick_axis)
         return self.process_joystick_input(
             raw_stick_val, invert=invert, limit_ratio=self.angular_velocity_limit_ratio)
-    """
-    #doesnt work right now
-    def configure_auto(self):
-        AutoBuilder.configure(
-            self.swerve.pose, # Robot pose supplier
-            self.swerve.reset_odometry, # Method to reset odometry (will be called if your auto has a starting pose)
-            self.swerve.robot_relative_speeds, # ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-            lambda speeds, feedforwards: self.swerve.drive(speeds), # Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also outputs individual module feedforwards
-            PPHolonomicDriveController( # PPHolonomicController is the built in path following controller for holonomic drive trains
-                PIDConstants(5.0, 0.0, 0.0), # Translation PID constants
-                PIDConstants(5.0, 0.0, 0.0) # Rotation PID constants
-            ),
-            config, # The robot configuration
-            self.shouldFlipPath, # Supplier to control path flipping based on alliance color
-            self # Reference to this subsystem to set requirements
-        )
-    """
-    def get_autonomous_command(self):
-        follower_params = TrajectoryFollowerParameters(
-            max_drive_velocity=4.5 * (u.m / u.s),
-            theta_kP=1,
-            xy_kP=1,
-        )
-
-        bezier_points = PathPlannerPath.waypointsFromPoses(
-            [
-                Pose2d(1.0, 1.0, Rotation2d.fromDegrees(0)),
-                Pose2d(3.0, 1.0, Rotation2d.fromDegrees(0)),
-                Pose2d(5.0, 3.0, Rotation2d.fromDegrees(90)),
-            ]
-        )
-        path = PathPlannerPath(
-            bezier_points,
-            PathConstraints(3.0, 3.0, 2 * math.pi, 4 * math.pi),
-            GoalEndState(0.0, Rotation2d.fromDegrees(-90)),  # Zero velocity and facing 90 degrees clockwise
-        )
-
-        first_path = True  # reset robot pose to initial pose in trajectory
-        open_loop = True  # don't use built-in motor feedback for velocity
-        return self.swerve.follow_trajectory_command(path, follower_params, first_path, open_loop)
     
-    # Configure button bindings here
+    def get_auto_command(self):
+        return PathPlannerPath.fromPathFile("Simple Move Off Line")
+
     #TODO: Test Limelight code
-    
     def makeAlignWithAprilTagCommand(self):
         from commands.drive.setcamerapipeline import SetCameraPipeline
         from commands.drive.followobject import FollowObject, StopWhen
