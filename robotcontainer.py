@@ -5,9 +5,14 @@ logger = logging.getLogger("your.robot")
 
 from rev import SparkMax
 import wpilib
-from wpilib import PS4Controller
+from wpilib import PS4Controller, SmartDashboard
 from wpimath.geometry import Translation2d, Rotation2d, Pose2d
 from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
+#from pathplannerlib import PathPlanner
+from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.controller import PPHolonomicDriveController
+from pathplannerlib.config import RobotConfig, PIDConstants
+from wpilib import DriverStation
 import commands2
 
 from swervepy import u, SwerveDrive, TrajectoryFollowerParameters
@@ -16,6 +21,7 @@ from swervepy.impl import CoaxialSwerveModule
 from constants import PHYS, MECH, ELEC, OP, SW, DS
 import components
 from commands import elevatormove, miscdriver, simplecommands
+from commands.drive import resetxy
 from commands2 import InstantCommand, RunCommand
 
 
@@ -41,7 +47,7 @@ class RobotContainer:
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
-        self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
+        #self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
         self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID, None) # CANIds.kArmMotorLeft, True
         self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID, ELEC.Shooter_Follow_CAN_ID)  
 
@@ -191,7 +197,23 @@ class RobotContainer:
         raw_stick_val = self.stick.getRawAxis(OP.rotation_joystick_axis)
         return self.process_joystick_input(
             raw_stick_val, invert=invert, limit_ratio=self.angular_velocity_limit_ratio)
-    
+    """
+    #doesnt work right now
+    def configure_auto(self):
+        AutoBuilder.configure(
+            self.swerve.pose, # Robot pose supplier
+            self.swerve.reset_odometry, # Method to reset odometry (will be called if your auto has a starting pose)
+            self.swerve.robot_relative_speeds, # ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+            lambda speeds, feedforwards: self.swerve.drive(speeds), # Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also outputs individual module feedforwards
+            PPHolonomicDriveController( # PPHolonomicController is the built in path following controller for holonomic drive trains
+                PIDConstants(5.0, 0.0, 0.0), # Translation PID constants
+                PIDConstants(5.0, 0.0, 0.0) # Rotation PID constants
+            ),
+            config, # The robot configuration
+            self.shouldFlipPath, # Supplier to control path flipping based on alliance color
+            self # Reference to this subsystem to set requirements
+        )
+    """
     def get_autonomous_command(self):
         follower_params = TrajectoryFollowerParameters(
             max_drive_velocity=4.5 * (u.m / u.s),
@@ -307,6 +329,7 @@ class RobotContainer:
         
         
         # right stick of the joystick to move the elevator up and down 
+        """
         self.elevator.setDefaultCommand(
             commands2.RunCommand(lambda: self.elevator.drive(
                 -self.buttonboard.getRawAxis(self.elevatoraxis)
@@ -324,20 +347,21 @@ class RobotContainer:
         # TODO: Implement an index to make this code not just copy paste
         ID4Button = self.buttonboard.button(4)
         ID4Button.onTrue(InstantCommand(lambda: self.elevator.setPositionGoal(self.elevatorconsts.L2PositionHeight), self.elevator))
+        """
         
 
         # Cross moves the coral manip to the set zero point
-        crossButton = self.driverController.button(PS4Controller.Button.kCross)
-        crossButton.whileTrue(simplecommands.ArmMove(0.2, self.coralmanip))
+        crossButton = self.buttonboard.axisLessThan(1, -.9)
+        crossButton.whileTrue(simplecommands.ArmMove(0.2, self.coralmanip)) #moves algae manip up
 
         # Circle moves the arm to set score point
-        circleButton = self.driverController.button(PS4Controller.Button.kCircle)
-        circleButton.whileTrue(simplecommands.ArmMove(-0.2, self.coralmanip))
+        circleButton = self.buttonboard.axisGreaterThan(1, .9)
+        circleButton.whileTrue(simplecommands.ArmMove(-0.2, self.coralmanip)) #moves algae manip down
 
         shootButton = self.buttonboard.button(1)
         feedbutton = self.buttonboard.button(2)
-        shootButton.whileTrue(simplecommands.Shoot(0.5, self.shooter))
-        feedbutton.whileTrue(simplecommands.Shoot(-0.5, self.shooter))
+        shootButton.whileTrue(simplecommands.Shoot(1, self.shooter))
+        feedbutton.whileTrue(simplecommands.Shoot(-1, self.shooter))
 
 
         # x "jiggles" the arm to get pieces unstuck in it

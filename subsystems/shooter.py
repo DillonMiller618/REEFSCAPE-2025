@@ -38,6 +38,13 @@ class Shooter(Subsystem):
         if self.isfollowMotor:
             self.followmotor = SparkMax(followMotorCANID, SparkBase.MotorType.kBrushless)
             self.m2config = SparkMaxConfig()
+            self.mconfig.smartCurrentLimit(ELEC.vortex_continuous_current_limit)
+            self.mconfig.secondaryCurrentLimit(ELEC.vortex_peak_current_limit)
+            self.mconfig.openLoopRampRate(ELEC.open_loop_ramp_rate)
+            self.mconfig.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
+            self.mconfig.encoder.positionConversionFactor(constants.kPositionConversionFactor)
+            self.mconfig.encoder.velocityConversionFactor(constants.kVelocityConversionFactor)
+            self.motor.configure(self.mconfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
             self.m2config.follow(motorCanID, invert=True)
             self.followmotor.configure(self.m2config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
 
@@ -48,13 +55,11 @@ class Shooter(Subsystem):
     def spinShooter(self, speed):
         self.motor.set(speed * ShooterConstants.kMaxPower)
         if self.isfollowMotor:
-            print("followmotor")
             self.followmotor.set(speed * ShooterConstants.kMaxPower)
 
     def stopShooter(self):
         self.motor.stopMotor()        
         if self.isfollowMotor:
-            print("stopfollowmotor")
             self.followmotor.stopMotor()
             
     """

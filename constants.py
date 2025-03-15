@@ -18,9 +18,12 @@ import rev, phoenix5
 from wpimath.trajectory import TrapezoidProfileRadians
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.geometry import Translation2d
+from pathplannerlib.config import RobotConfig
 
 from swervepy import u
 
+
+config = RobotConfig.fromGUISettings()
 
 # Physical constants
 phys_data = {
