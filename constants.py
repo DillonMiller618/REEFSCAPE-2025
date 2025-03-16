@@ -176,11 +176,11 @@ AUTO_data = {
     "kMaxSpeedMetersPerSecond": 3,
     "kMaxAccelerationMetersPerSecondSquared": 3,
     "kMaxAngularSpeedRadiansPerSecond": math.pi,
-    "kMaxAngularSpeedRadiansPerSecondSquared": math.pi,
+    "kMaxAngularSpeedRadiansPerSecondSquared": math.  pi,
 
-    "kPXController": 1,
-    "kPYController": 1,
-    "kPThetaController": 1,
+    "xy_kP": 0.012,
+    "theta_kP": 1,
+    "drive_open_loop": True,
 
     # Constraint for the motion profiled robot angle controller
     "kThetaControllerConstraints": TrapezoidProfileRadians.Constraints(math.pi, math.pi),

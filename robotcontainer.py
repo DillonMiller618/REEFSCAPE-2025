@@ -5,10 +5,11 @@ logger = logging.getLogger("your.robot")
 
 from rev import SparkMax
 import wpilib
-from wpilib import PS4Controller
+from wpilib import PS4Controller, SmartDashboard, CameraServer
 from wpilib.shuffleboard import Shuffleboard
 from wpimath.geometry import Translation2d, Rotation2d, Pose2d
 from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
+from pathplannerlib.auto import PathPlannerAuto, AutoBuilder
 import commands2
 
 from swervepy import u, SwerveDrive, TrajectoryFollowerParameters
@@ -41,6 +42,7 @@ class RobotContainer:
 
         #initialize subsystems
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
+        #self.dashcam = CameraServer().launch() TODO: use logitech cam
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
         #self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
@@ -153,6 +155,8 @@ class RobotContainer:
                 drive_open_loop=SW.drive_open_loop,
             )
         )
+        #self.autoChooser = AutoBuilder.buildAutoChooser()
+        #SmartDashboard.putData("Auto Chooser", self.autoChooser)
         
 
     def log_data(self):
@@ -195,7 +199,7 @@ class RobotContainer:
             raw_stick_val, invert=invert, limit_ratio=self.angular_velocity_limit_ratio)
     
     def get_auto_command(self):
-        return PathPlannerPath.fromPathFile("Simple Move Off Line")
+        return self.autoChooser.getSelected()
 
     #TODO: Test Limelight code
     def makeAlignWithAprilTagCommand(self):
