@@ -2,8 +2,13 @@
   "robotWidth": 0.9,
   "robotLength": 0.9,
   "holonomicMode": true,
-  "pathFolders": [],
-  "autoFolders": [],
+  "pathFolders": [
+    "Move Back (3pts)",
+    "Score Algae (9pts)"
+  ],
+  "autoFolders": [
+    "Algae Autos"
+  ],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,
   "defaultMaxAngVel": 540.0,
@@ -15,7 +20,7 @@
   "driveWheelRadius": 0.048,
   "driveGearing": 5.143,
   "maxDriveSpeed": 5.45,
-  "driveMotorType": "NEO",
+  "driveMotorType": "krakenX60",
   "driveCurrentLimit": 60.0,
   "wheelCOF": 1.2,
   "flModuleX": 0.273,

@@ -1,0 +1,130 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 7.5,
+        "y": 1.0
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 7.461734693877552,
+        "y": 1.7902104591836725
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 6.029081632653061,
+        "y": 2.1632971938775505
+      },
+      "prevControl": {
+        "x": 7.0043436886764106,
+        "y": 2.086458365221166
+      },
+      "nextControl": {
+        "x": 4.797895408163265,
+        "y": 2.2602997448979583
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.1191326530612247,
+        "y": 2.394610969387754
+      },
+      "prevControl": {
+        "x": 3.969642857142857,
+        "y": 2.2901466836734685
+      },
+      "nextControl": {
+        "x": 1.3741452965707448,
+        "y": 2.4366667072541524
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.1191326530612247,
+        "y": 1.8200573979591832
+      },
+      "prevControl": {
+        "x": 0.8580994897959187,
+        "y": 1.9692920918367336
+      },
+      "nextControl": {
+        "x": 3.295067365927662,
+        "y": 1.680893526614043
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 6.573788265306123,
+        "y": 1.4618941326530603
+      },
+      "prevControl": {
+        "x": 5.573788265306123,
+        "y": 1.4618941326530606
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.2,
+      "rotationDegrees": -45.0
+    },
+    {
+      "waypointRelativePos": 1.95,
+      "rotationDegrees": -171.7268795215337
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "algaeDown",
+      "waypointRelativePos": 1.0,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "intakeAlgae",
+      "waypointRelativePos": 1.8,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "scoreInProcessor",
+      "waypointRelativePos": 4.0,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "reversed": false,
+  "folder": "Score Algae (9pts)",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "useDefaultConstraints": true
+}

@@ -6,6 +6,7 @@ logger = logging.getLogger("your.robot")
 from rev import SparkMax
 import wpilib
 from wpilib import PS4Controller, SmartDashboard, CameraServer
+from wpilib.interfaces import GenericHID
 from wpilib.shuffleboard import Shuffleboard
 from wpimath.geometry import Translation2d, Rotation2d, Pose2d
 from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
@@ -42,7 +43,7 @@ class RobotContainer:
 
         #initialize subsystems
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
-        #self.dashcam = CameraServer().launch() TODO: use logitech cam
+        #self.dashcam = CameraServer().launch() #TODO: use logitech cam
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
         #self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
@@ -155,8 +156,8 @@ class RobotContainer:
                 drive_open_loop=SW.drive_open_loop,
             )
         )
-        #self.autoChooser = AutoBuilder.buildAutoChooser()
-        #SmartDashboard.putData("Auto Chooser", self.autoChooser)
+        self.autoChooser = AutoBuilder.buildAutoChooser(default_auto_name="1 Algae Red Side.path") #check this
+        SmartDashboard.putData("Auto Chooser", self.autoChooser)
         
 
     def log_data(self):
@@ -200,6 +201,7 @@ class RobotContainer:
     
     def get_auto_command(self):
         return self.autoChooser.getSelected()
+        
 
     #TODO: Test Limelight code
     def makeAlignWithAprilTagCommand(self):
@@ -283,6 +285,7 @@ class RobotContainer:
 
         # Climber up/down
         climberup = self.driverController.pov(180)
+        self.driverController.setRumble(GenericHID.RumbleType.kBothRumble, 1) #TODO: Test rumble
         climberdown = self.driverController.pov(0)
 
         climberup.whileTrue(simplecommands.ClimberMove(1, self.climber))
