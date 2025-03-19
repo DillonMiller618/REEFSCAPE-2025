@@ -47,21 +47,17 @@ class ArmConstants:
 
 
 class Arm(Subsystem):
-    def __init__(self, leadMotorCANId: int, limitSwitches: bool) -> None:
+    def __init__(self, leadMotorCANId: int) -> None:
         super().__init__()
         self.leadmotor = SparkMax(leadMotorCANId, SparkBase.MotorType.kBrushless)
+        self.pidcontroller = self.leadmotor.getClosedLoopController()
         self.encoder = self.leadmotor.getEncoder()
+
         self.leadmotor.configure(self._getLeadMotorConfig(ArmConstants.kEncoderPositionFactor, ArmConstants.kEncoderInverted))
         
-
-        self.pidcontroller = self.leadmotor.getClosedLoopController()
-        if limitSwitches:
-            print("Not implemented, add later")
-            pass
-        else:
-            self.encoder.setPosition(0)
-            self.angleGoal = ArmConstants.kArmMaxAngle #starts at high position, e.g. vertical
-            self.pidcontroller.setReference(self.angleGoal, SparkBase.ControlType.kPosition, ClosedLoopSlot.kSlot0)
+        self.encoder.setPosition(0)
+        self.angleGoal = ArmConstants.kArmMaxAngle #starts at high position, e.g. vertical
+        self.pidcontroller.setReference(self.angleGoal, SparkBase.ControlType.kPosition, ClosedLoopSlot.kSlot0)
 
 
     def periodic(self) -> None:
@@ -71,24 +67,30 @@ class Arm(Subsystem):
         """Gets the angle of the arm from the relative encoder in rotations"""
         return self.encoder.getPosition()
     
-    def setAngleGoal(self, angle):
-        self.angleGoal = angle
+    def checkAngle(self, tolerance) -> bool:
+        """Checks if the current angle is close to the setpoint, with a tolerance factor"""
+        pass
+    
+    def setAngleGoal(self, angle: Rotation2d):
+        self.angleGoal = angle.degrees()
         #keeping the angle in bounds by setting the angle if it is past normal operating range to the edge of operating.
         if self.angleGoal < ArmConstants.kArmMinAngle:
             self.angleGoal = ArmConstants.kArmMinAngle
         elif self.angleGoal > ArmConstants.kArmMaxAngle:
             self.angleGoal = ArmConstants.kArmMaxAngle
 
-        self.pidcontroller.setReference(self.angleGoal, SparkBase.ControlType.kPosition, ClosedLoopSlot.kSlot0)
+        self.pidcontroller.setReference(self.angleGoal, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0)
 
+    def setSpeed(self, speed: float) -> None:
+        """Legacy method of this arm, just in case PID control isn't responding properly"""
+        self.leadmotor.set(speed)
     
+    def stopMotor(self) -> None:
+        """Used to completely stop the motor, including speed and pid controls"""
+        self.leadmotor.stopMotor()
 
 
-
-    def _getLeadMotorConfig(
-            absPositionFactor: float,
-            absEncoderInverted: bool,
-        ) -> SparkMaxConfig:
+    def _getLeadMotorConfig(absPositionFactor: float) -> SparkMaxConfig:
 
         config = SparkMaxConfig()
         config.inverted(False)
@@ -97,9 +99,6 @@ class Arm(Subsystem):
         config.encoder.positionConversionFactor(relPositionFactor)
         config.encoder.velocityConversionFactor(relPositionFactor / 60)  # 60 seconds per minute
 
-        config.absoluteEncoder.positionConversionFactor(absPositionFactor)
-        config.absoluteEncoder.velocityConversionFactor(absPositionFactor / 60)  # 60 seconds per minute
-        config.absoluteEncoder.inverted(absEncoderInverted)
         config.closedLoop.setFeedbackSensor(ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
 
         assert ArmConstants.kArmMaxAngle > ArmConstants.kArmMinAngle, (

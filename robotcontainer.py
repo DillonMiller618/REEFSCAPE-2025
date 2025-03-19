@@ -1,16 +1,15 @@
-import math
+import math, os
 import logging
 
 logger = logging.getLogger("your.robot")
 
 from rev import SparkMax
 import wpilib
-from wpilib import PS4Controller, SmartDashboard, CameraServer
+from wpilib import PS4Controller, SmartDashboard
 from wpilib.interfaces import GenericHID
-from wpilib.shuffleboard import Shuffleboard
-from wpimath.geometry import Translation2d, Rotation2d, Pose2d
-from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
-from pathplannerlib.auto import PathPlannerAuto, AutoBuilder
+from wpimath.geometry import Translation2d, Rotation2d
+from pathplannerlib.path import PathPlannerPath
+from pathplannerlib.auto import PathPlannerAuto, AutoBuilder, NamedCommands
 import commands2
 
 from swervepy import u, SwerveDrive, TrajectoryFollowerParameters
@@ -18,7 +17,7 @@ from swervepy.impl import CoaxialSwerveModule
 
 from constants import PHYS, MECH, ELEC, OP, SW, DS, AUTO
 import components
-from commands import elevatormove, miscdriver, simplecommands
+from commands import miscdriver, simplecommands
 from commands.drive import resetxy
 from commands2 import InstantCommand, RunCommand
 
@@ -35,7 +34,6 @@ class RobotContainer:
         #other imports, TODO: Will move these
         from subsystems.limelight_camera import LimelightCamera
         from subsystems.climber import Climber
-        from subsystems.elevator import Elevator, ElevatorConstants
         from subsystems.arm import Arm, ArmConstants
         from subsystems.shooter import Shooter
         
@@ -43,26 +41,21 @@ class RobotContainer:
 
         #initialize subsystems
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
-        #self.dashcam = CameraServer().launch() #TODO: use logitech cam
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
-        #self.elevator = Elevator(leadMotorCANId=ELEC.Elevator_Lead_CAN_ID, presetSwitchPositions=(15, 20, 25), motorClass=SparkMax)
-        self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID, None) # CANIds.kArmMotorLeft, True
+        self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID, None)
         self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID, ELEC.Shooter_Follow_CAN_ID)  
 
         # to access in configure_button_bindings
         self.armconsts = ArmConstants
-        self.elevatorconsts = ElevatorConstants
-
-        self.configure_button_bindings()
 
         # The Azimuth component included the absolute encoder because it needs
         # to be able to reset to absolute position.
         
-        self.lf_enc = components.absolute_encoder_class(ELEC.LF_encoder_DIO, MECH.steering_encoder_inverted)
-        self.lb_enc = components.absolute_encoder_class(ELEC.LB_encoder_DIO, MECH.steering_encoder_inverted)
-        self.rb_enc = components.absolute_encoder_class(ELEC.RB_encoder_DIO, MECH.steering_encoder_inverted)
-        self.rf_enc = components.absolute_encoder_class(ELEC.RF_encoder_DIO, MECH.steering_encoder_inverted)
+        self.lf_enc = components.absolute_encoder_class(ELEC.LF_encoder_CAN_ID, MECH.steering_encoder_inverted)
+        self.lb_enc = components.absolute_encoder_class(ELEC.LB_encoder_CAN_ID, MECH.steering_encoder_inverted)
+        self.rb_enc = components.absolute_encoder_class(ELEC.RB_encoder_CAN_ID, MECH.steering_encoder_inverted)
+        self.rf_enc = components.absolute_encoder_class(ELEC.RF_encoder_CAN_ID, MECH.steering_encoder_inverted)
         modules = (
             # Left Front module
             CoaxialSwerveModule(
@@ -156,8 +149,21 @@ class RobotContainer:
                 drive_open_loop=SW.drive_open_loop,
             )
         )
-        self.autoChooser = AutoBuilder.buildAutoChooser(default_auto_name="1 Algae Red Side.path") #check this
-        SmartDashboard.putData("Auto Chooser", self.autoChooser)
+        self.autoChooser = wpilib.SendableChooser()
+
+        """Add named commands here"""
+
+        #TODO: Check this implementation
+        pathsPath = os.path.join(wpilib.getDeployDirectory(), "pathplanner", "autos")
+        for file in os.listdir(pathsPath):
+            relevantName = file.split(".")[0] # Gets rid of .path/.auto in dropdown
+            auton = PathPlannerAuto(relevantName) #makes it an auto
+            wpilib.SmartDashboard.putData(f"autos/{relevantName}", auton) #puts in in smartdashboard under autos
+            self.autoChooser.addOption(relevantName, auton)
+
+        SmartDashboard.putData("Auto Chooser", self.autoChooser) #puts the chooser in shuffleboard
+        self.configure_button_bindings() #check below, adds all commands
+
         
 
     def log_data(self):
@@ -200,8 +206,8 @@ class RobotContainer:
             raw_stick_val, invert=invert, limit_ratio=self.angular_velocity_limit_ratio)
     
     def get_auto_command(self):
-        return self.autoChooser.getSelected()
-        
+        path = PathPlannerPath.fromPathFile("Simple Move Off Line")
+        return AutoBuilder.followPath(path)
 
     #TODO: Test Limelight code
     def makeAlignWithAprilTagCommand(self):
@@ -227,8 +233,8 @@ class RobotContainer:
         button does on a PS4 Controller, and the button board. Update this regularly.
 
         Analog or Digital Sticks
-        PS4 Right Stick (not here, in swervepy): Stationary drive rotation TODO: Switch axes in code
-        PS4 Left Stick (not here, in swervepy): Swerve Drive TODO: Switch axes in code
+        PS4 Right Stick (not here, in swervepy): Stationary drive rotation
+        PS4 Left Stick (not here, in swervepy): Swerve Drive 
         Button Board Stick Vertical: Move elevator up and down at a constant rate
         Button Board Stick Horizontal: not implemented
 
@@ -285,43 +291,20 @@ class RobotContainer:
 
         # Climber up/down
         climberup = self.driverController.pov(180)
-        self.driverController.setRumble(GenericHID.RumbleType.kBothRumble, 1) #TODO: Test rumble
         climberdown = self.driverController.pov(0)
 
         climberup.whileTrue(simplecommands.ClimberMove(1, self.climber))
         climberdown.whileTrue(simplecommands.ClimberMove(-1, self.climber))
         
-        
-        # right stick of the joystick to move the elevator up and down 
-        """
-        self.elevator.setDefaultCommand(
-            commands2.RunCommand(lambda: self.elevator.drive(
-                -self.buttonboard.getRawAxis(self.elevatoraxis)
-            ), self.elevator)
-        )
-        
-        
-        # left bumper and right bumper will move elevator between presetSwitchPositions (see above) 
-        leftBumper = self.driverController.button(PS4Controller.Button.kL1)
-        leftBumper.onTrue(InstantCommand(self.elevator.drive(self.elevatorconsts.L3PositionHeight), self.elevator))
-        rightBumper = self.driverController.button(PS4Controller.Button.kR1)
-        rightBumper.onTrue(InstantCommand(self.elevator.drive(self.elevatorconsts.L4PositionHeight), self.elevator))
-
-        # Coral Position moving, and TODO: scoring
-        # TODO: Implement an index to make this code not just copy paste
-        ID4Button = self.buttonboard.button(4)
-        ID4Button.onTrue(InstantCommand(lambda: self.elevator.setPositionGoal(self.elevatorconsts.L2PositionHeight), self.elevator))
-        """
-        
-
         # Cross moves the coral manip to the set zero point
-        crossButton = self.buttonboard.axisLessThan(1, -.9)
-        crossButton.whileTrue(simplecommands.ArmMove(0.2, self.coralmanip)) #moves algae manip up
+        axisDown = self.buttonboard.axisLessThan(1, -.9)
+        axisDown.whileTrue(simplecommands.ArmMove(0.2, self.coralmanip)) #moves algae manip up
 
         # Circle moves the arm to set score point
-        circleButton = self.buttonboard.axisGreaterThan(1, .9)
-        circleButton.whileTrue(simplecommands.ArmMove(-0.2, self.coralmanip)) #moves algae manip down
+        axisUp = self.buttonboard.axisGreaterThan(1, .9)
+        axisUp.whileTrue(simplecommands.ArmMove(-0.2, self.coralmanip)) #moves algae manip down
 
+        #manual shooting
         shootButton = self.buttonboard.button(1)
         feedbutton = self.buttonboard.button(2)
         shootButton.whileTrue(simplecommands.Shoot(1, self.shooter))

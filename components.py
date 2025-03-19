@@ -84,8 +84,8 @@ gyro_param_values = {
     #     (default False)
     #
     # Add your gyro constructor params here.
-    "id_": 20,
-    "invert": True,
+    "id_": ELEC.Gyro_CAN_ID,
+    "invert": ELEC.Invert_Gyro,
 }
 
 drive_component_params_class = TypicalDriveComponentParameters

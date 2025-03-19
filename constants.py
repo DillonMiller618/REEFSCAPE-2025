@@ -15,7 +15,6 @@ This file defines constants related to your robot.  These constants include:
 import math
 from collections import namedtuple
 import rev, phoenix5
-from wpimath.trajectory import TrapezoidProfileRadians
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.geometry import Translation2d
 from pathplannerlib.config import RobotConfig
@@ -77,24 +76,29 @@ elec_data = {
     "open_loop_ramp_rate": 0.5,
     "closed_loop_ramp_rate": 0.5,
 
-    "RF_steer_CAN_ID": 9,
-    "RF_drive_CAN_ID": 8,
-    "RF_encoder_DIO": 19, # these have been updated to can ids
-    "RB_steer_CAN_ID": 2,
-    "RB_drive_CAN_ID": 1,
-    "RB_encoder_DIO": 18,
-    "LB_steer_CAN_ID": 4,
-    "LB_drive_CAN_ID": 3,
-    "LB_encoder_DIO": 16,
-    "LF_steer_CAN_ID": 6,
-    "LF_drive_CAN_ID": 5,
-    "LF_encoder_DIO": 17,
+    #this is assuming use of a can-based encoder solution, such as cancoders on mk4is
+    #because of some serious tomfoolery with the coordinate system in this lib, left and right need to be switched in
+    #code compared to how it is physically. If that still doesn't resolve it, try combinations based on stationary rotation.
+    "RF_steer_CAN_ID":   9,
+    "RF_drive_CAN_ID":   8,
+    "RF_encoder_CAN_ID": 19,
+    "RB_steer_CAN_ID":   2,
+    "RB_drive_CAN_ID":   1,
+    "RB_encoder_CAN_ID": 18,
+    "LB_steer_CAN_ID":   4,
+    "LB_drive_CAN_ID":   3,
+    "LB_encoder_CAN_ID": 16,
+    "LF_steer_CAN_ID":   6,
+    "LF_drive_CAN_ID":   5,
+    "LF_encoder_CAN_ID": 17,
 
     "Climber_CAN_ID": 12,
-    "Elevator_Lead_CAN_ID": 25, 
     "Arm_Lead_CAN_ID": 7, 
     "Shooter_Lead_CAN_ID": 14, 
-    "Shooter_Follow_CAN_ID": 13
+    "Shooter_Follow_CAN_ID": 13,
+
+    "Gyro_CAN_ID": 20,
+    "Invert_Gyro": True,
 }
 ELEC = namedtuple("Data", elec_data.keys())(**elec_data)
 
@@ -116,7 +120,7 @@ op_data = {
     # following parameters.  Setting to None is the same as setting to
     # max_speed/max_angular_velocity, and indicates no limit.
     
-    "speed_limit": None, #TODO: fix this one day, should not be None
+    "speed_limit": 1.75 * (u.m / u.s), #the highest controllable value that our drivers were comfortable with this year.
     "angular_velocity_limit": 2.5 * (u.rad / u.s),
 
     # For NEO / SparkMAX, use the following
@@ -149,7 +153,6 @@ sw_data = {
 
     # Constants for PID control of the propulsion AND steering motors
     # (kP must be non-zero, or azimuth motors won't engage.)
-    # "kP": 0.3,  # representative value for Falcon500 motors
     "kP": 0.012,   # representative value for NEO motors
     "kI": 0,
     "kD": 0.001,
@@ -167,22 +170,10 @@ DS_data = {
 }
 DS = namedtuple("Data", DS_data.keys())(**DS_data)
 
-
-#DO NOT CHANGE THIS DICT. IT WILL MESS UP AUTOBUILDER.
+#You shouldn't have to change this.
 AUTO_data = {
-    "kUseSqrtControl": True,  # improves arrival time and precision for simple driving commands
-
-    # below are really trajectory constants
-    "kMaxSpeedMetersPerSecond": 3,
-    "kMaxAccelerationMetersPerSecondSquared": 3,
-    "kMaxAngularSpeedRadiansPerSecond": math.pi,
-    "kMaxAngularSpeedRadiansPerSecondSquared": math.  pi,
-
     "xy_kP": 0.012,
     "theta_kP": 1,
     "drive_open_loop": True,
-
-    # Constraint for the motion profiled robot angle controller
-    "kThetaControllerConstraints": TrapezoidProfileRadians.Constraints(math.pi, math.pi),
 }
 AUTO = namedtuple("Data", AUTO_data.keys())(**AUTO_data)
