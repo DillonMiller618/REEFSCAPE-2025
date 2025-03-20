@@ -4,12 +4,15 @@ from rev import SparkMax, SparkBase
 from wpimath.geometry import Rotation2d
 
 class ArmMove(commands2.command):
-    def __init__(self, arm: Arm, angle: float, toleranceInches=0.5):
+    def __init__(self, arm: Arm, angle_or_Speed: float, useSpeedControl=False):
+        """
+        Moves the arm based on a parameter angle, which can be turned into speed with the parameters"""
         super().__init__()
 
-        # position must be callable
-        self.position = Rotation2d.fromDegrees(angle)
+        self.useSpeedControl = useSpeedControl
         self.arm = arm
+        self.control = angle_or_Speed
+        
 
     def initialize(self):
         pass
@@ -18,7 +21,13 @@ class ArmMove(commands2.command):
         pass
 
     def end(self, interrupted: bool):
-        self.arm.stopMotor()
+        if self.useSpeedControl:
+            self.arm.stopMotor()
+        else:
+            self.arm.setAngleGoal(self.arm.getPosition()) #effectively stops the motor
 
     def execute(self):
-        self.arm.setAngleGoal(angle=self.position)
+        if self.useSpeedControl:
+            self.arm.setSpeed(self.control)
+        else:
+            self.arm.setAngleGoal(Rotation2d.fromDegrees(self.control))

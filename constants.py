@@ -114,7 +114,7 @@ op_data = {
     # These maximum parameters reflect the maximum physically possible, not the
     # desired maximum limit.
     "max_speed": 5.0 * (u.m / u.s),
-    "max_angular_velocity": 13.5 * (u.rad / u.s), #TODO: Check
+    "max_angular_velocity": 13.5 * (u.rad / u.s),
 
     # You can limit how fast your robot moves (e.g. during testing) using the
     # following parameters.  Setting to None is the same as setting to

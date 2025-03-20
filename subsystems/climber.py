@@ -30,7 +30,7 @@ class Climber(Subsystem):
         self.motor.configure(self.mconfig, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
 
     def moveClimber(self, speed):
-        self.motor.set(speed * ClimberConstants.kMaxPower)
+        self.motor.set(speed)
 
     def stopClimber(self):
         self.motor.stopMotor()

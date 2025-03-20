@@ -32,6 +32,7 @@ class ClimberMove(commands2.Command):
 
 class ArmMove(commands2.Command):
     def __init__(self, speed: float, arm: Arm):
+        """Deprecated, do not use for speed, instead use armmove.py"""
         self.arm = arm
         self.speed = speed
         self.addRequirements(arm)
@@ -59,7 +60,7 @@ class Shoot(commands2.Command):
         self.speed = speed
         self.addRequirements(shooter)
         """
-        Moves the climber at set constant rates. 1 is forward, -1 is backward
+        Moves the shoot at set constant rates. 1 is forward, -1 is backward
         """
     
     def initialize(self):

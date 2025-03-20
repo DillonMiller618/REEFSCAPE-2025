@@ -1,4 +1,4 @@
-from rev import SparkMax, SparkBase, SparkBaseConfig, LimitSwitchConfig, ClosedLoopConfig, SparkMaxConfig, ClosedLoopSlot
+from rev import SparkMax, SparkBase, SparkBaseConfig, ClosedLoopConfig, SparkMaxConfig, ClosedLoopSlot
 from wpimath.geometry import Rotation2d
 from commands2 import Subsystem
 from wpilib import SmartDashboard
@@ -82,7 +82,7 @@ class Arm(Subsystem):
         self.pidcontroller.setReference(self.angleGoal, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0)
 
     def setSpeed(self, speed: float) -> None:
-        """Legacy method of this arm, just in case PID control isn't responding properly"""
+        """Legacy method of arm, just in case PID control isn't responding properly"""
         self.leadmotor.set(speed)
     
     def stopMotor(self) -> None:
