@@ -53,7 +53,7 @@ class Arm(Subsystem):
         self.pidcontroller = self.leadmotor.getClosedLoopController()
         self.encoder = self.leadmotor.getEncoder()
 
-        self.leadmotor.configure(self._getLeadMotorConfig(ArmConstants.kEncoderPositionFactor, ArmConstants.kEncoderInverted))
+        self.leadmotor.configure(self._getLeadMotorConfig(), SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
         
         self.encoder.setPosition(0)
         self.angleGoal = ArmConstants.kArmMaxAngle #starts at high position, e.g. vertical
@@ -90,7 +90,7 @@ class Arm(Subsystem):
         self.leadmotor.stopMotor()
 
 
-    def _getLeadMotorConfig(absPositionFactor: float) -> SparkMaxConfig:
+    def _getLeadMotorConfig(invert=False) -> SparkMaxConfig:
 
         config = SparkMaxConfig()
         config.inverted(False)

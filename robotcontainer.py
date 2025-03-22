@@ -34,7 +34,7 @@ class RobotContainer:
         #other imports, TODO: Will move these
         from subsystems.limelight_camera import LimelightCamera
         from subsystems.climber import Climber
-        from subsystems.arm2 import Arm, ArmConstants
+        from subsystems.arm import Arm, ArmConstants
         from subsystems.shooter import Shooter
         
         self.gyro = components.gyro_component_class(**components.gyro_param_values)
@@ -43,7 +43,7 @@ class RobotContainer:
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
-        self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID) #Arm(ELEC.Arm_Lead_CAN_ID, None)
+        self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID, None) #Arm(ELEC.Arm_Lead_CAN_ID)
         self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID, ELEC.Shooter_Follow_CAN_ID)  
 
         # to access in configure_button_bindings
@@ -149,11 +149,11 @@ class RobotContainer:
                 drive_open_loop=SW.drive_open_loop,
             )
         )
-        self.autoChooser = wpilib.SendableChooser()
-        self.autoChooser.setDefaultOption("Auto 3pts")
+        #self.autoChooser = wpilib.SendableChooser()
+        #self.autoChooser.setDefaultOption("Auto 3pts")
 
         """Add named commands here"""
-
+        """
         #TODO: Check this implementation
         pathsPath = os.path.join(wpilib.getDeployDirectory(), "pathplanner", "autos")
         for file in os.listdir(pathsPath):
@@ -163,8 +163,9 @@ class RobotContainer:
             self.autoChooser.addOption(relevantName, auton)
 
         SmartDashboard.putData("Auto Chooser", self.autoChooser) #puts the chooser in shuffleboard
-        
+        """
         self.configure_button_bindings() #check below, adds all commands
+        
 
         
 
@@ -208,8 +209,8 @@ class RobotContainer:
             raw_stick_val, invert=invert, limit_ratio=self.angular_velocity_limit_ratio)
     
     def get_auto_command(self):
-        path = PathPlannerPath.fromPathFile(self.autoChooser.getSelected())
-        #path = PathPlannerPath.fromPathFile("Auto 3pts") #just selects the most basic auto, for testing purposes
+        #path = PathPlannerPath.fromPathFile(self.autoChooser.getSelected())
+        path = PathPlannerPath.fromPathFile("Auto 3pts") #just selects the most basic auto, for testing purposes
         return AutoBuilder.followPath(path)
 
     #TODO: Test Limelight code
@@ -298,22 +299,22 @@ class RobotContainer:
         climberdown.whileTrue(simplecommands.ClimberMove(-1, self.climber))
         
         manualAxisDown = self.buttonboard.axisLessThan(1, -.9) #axes on buttonboard are inverted, we installed it upside down
-        manualAxisDown.whileTrue(armmove.ArmMove(self.coralmanip, 0.2, True)) #moves algae manip up
+        manualAxisDown.whileTrue(simplecommands.ArmMove(.2, self.coralmanip)) #moves algae manip up
 
         manualAxisUp = self.buttonboard.axisGreaterThan(1, .9)
-        manualAxisUp.whileTrue(armmove.ArmMove(self.coralmanip, -0.2, True)) #moves algae manip down
-
+        manualAxisUp.whileTrue(simplecommands.ArmMove(-0.2, self.coralmanip)) #moves algae manip down
+        """
         autoAxisDown = self.buttonboard.button(3) 
         autoAxisDown.onTrue(armmove.ArmMove(self.coralmanip, self.armconsts.kArmMinAngle)) #automatically moves to min angle
 
         autoAxisUp = self.buttonboard.button(8) #TODO: Check
         autoAxisUp.onTrue(armmove.ArmMove(self.coralmanip, self.armconsts.kArmMaxAngle)) #automatically moves to max angle
-
+        """
         #manual shooting
         shootButton = self.buttonboard.button(1)
         feedbutton = self.buttonboard.button(2)
         shootButton.whileTrue(simplecommands.Shoot(1, self.shooter))
-        feedbutton.whileTrue(simplecommands.Shoot(-1, self.shooter))
+        feedbutton.whileTrue(simplecommands.Shoot(-0.5, self.shooter))
 
 
 
