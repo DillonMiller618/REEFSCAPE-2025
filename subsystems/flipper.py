@@ -1,6 +1,5 @@
 from rev import SparkMax, SparkBase, SparkBaseConfig, ClosedLoopConfig, SparkMaxConfig, ClosedLoopSlot
 from commands2 import Subsystem
-from wpilib import Timer
 from constants import ELEC
 
 

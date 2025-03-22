@@ -321,5 +321,5 @@ class RobotContainer:
         #Coral Flipper
         flipUp = self.buttonboard.button(4)
         flipDown = self.buttonboard.button(5)
-        flipUp.onTrue(simplecommands.FlipCoral(self.flipper, .25))
-        flipDown.onTrue(simplecommands.FlipCoral(self.flipper, -.25))
+        flipUp.whileTrue(simplecommands.FlipCoral(self.flipper, .25))
+        flipDown.whileTrue(simplecommands.FlipCoral(self.flipper, -.25))
