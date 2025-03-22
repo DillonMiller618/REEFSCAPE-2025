@@ -2,7 +2,9 @@ import commands2
 from subsystems.climber import Climber
 from subsystems.shooter import Shooter
 from subsystems.arm import Arm
+from subsystems.flipper import Flipper
 from constants import ELEC
+from wpilib import Timer
 
 
 #TODO: Test code on robot
@@ -74,3 +76,27 @@ class Shoot(commands2.Command):
     
     def end(self, interrupted: bool):
         self.shooter.stopShooter()
+        
+
+class FlipCoral(commands2.Command):
+    def __init__(self, flipper: Flipper, speed: float, duration: float):
+        self.flipper = flipper
+        self.speed = speed
+        self.duration = duration
+        self.addRequirements(flipper)
+        self.time = Timer()
+        self.time.start()
+
+    def initialize(self):
+        pass
+
+    def isFinished(self) -> bool:
+        return False
+    
+    def execute(self):
+        self.time.restart()
+        while self.time.get() < self.duration:
+            self.flipper.flip(self.speed)
+    
+    def end(self, interrupted: bool):
+        self.flipper.stopMotor()

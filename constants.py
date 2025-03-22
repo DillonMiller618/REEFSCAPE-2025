@@ -96,6 +96,7 @@ elec_data = {
     "Arm_Lead_CAN_ID": 7, 
     "Shooter_Lead_CAN_ID": 14, 
     "Shooter_Follow_CAN_ID": 13,
+    "Flipper_Lead_CAN_ID": 35, #really high, just didn't feel like figuring out the lowest lmao
 
     "Gyro_CAN_ID": 20,
     "Invert_Gyro": True,

@@ -35,7 +35,8 @@ class RobotContainer:
         from subsystems.limelight_camera import LimelightCamera
         from subsystems.climber import Climber
         from subsystems.arm import Arm, ArmConstants
-        from subsystems.shooter import Shooter
+        from subsystems.shooter import Shooter 
+        from subsystems.flipper import Flipper
         
         self.gyro = components.gyro_component_class(**components.gyro_param_values)
 
@@ -44,7 +45,8 @@ class RobotContainer:
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
         self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID, None) #Arm(ELEC.Arm_Lead_CAN_ID)
-        self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID, ELEC.Shooter_Follow_CAN_ID)  
+        self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID, ELEC.Shooter_Follow_CAN_ID)
+        self.flipper = Flipper(ELEC.Flipper_Lead_CAN_ID)
 
         # to access in configure_button_bindings
         self.armconsts = ArmConstants
@@ -316,6 +318,8 @@ class RobotContainer:
         shootButton.whileTrue(simplecommands.Shoot(1, self.shooter))
         feedbutton.whileTrue(simplecommands.Shoot(-0.5, self.shooter))
 
-
-
-    
+        #Coral Flipper
+        flipUp = self.buttonboard.button(4)
+        flipDown = self.buttonboard.button(5)
+        flipUp.onTrue(simplecommands.FlipCoral(self.flipper, .25))
+        flipDown.onTrue(simplecommands.FlipCoral(self.flipper, -.25))
