@@ -21,10 +21,7 @@ class ArmMove(commands2.Command):
         pass
 
     def end(self, interrupted: bool):
-        if self.useSpeedControl:
-            self.arm.stopMotor()
-        else:
-            self.arm.setAngleGoal(self.arm.getPosition()) #effectively stops the motor
+        self.arm.stopMotor()
 
     def execute(self):
         if self.useSpeedControl:

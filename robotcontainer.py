@@ -34,7 +34,7 @@ class RobotContainer:
         #other imports, TODO: Will move these
         from subsystems.limelight_camera import LimelightCamera
         from subsystems.climber import Climber
-        from subsystems.arm import Arm, ArmConstants
+        from subsystems.arm2 import Arm, ArmConstants
         from subsystems.shooter import Shooter 
         from subsystems.flipper import Flipper
         
@@ -44,7 +44,7 @@ class RobotContainer:
         self.camera = LimelightCamera("limelight-pickup")  # TODO: name of your camera goes in parentheses
 
         self.climber = Climber(ELEC.Climber_CAN_ID)
-        self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID, None) #Arm(ELEC.Arm_Lead_CAN_ID)
+        self.coralmanip = Arm(ELEC.Arm_Lead_CAN_ID) #Arm(ELEC.Arm_Lead_CAN_ID, None) 
         self.shooter = Shooter(ELEC.Shooter_Lead_CAN_ID, ELEC.Shooter_Follow_CAN_ID)
         self.flipper = Flipper(ELEC.Flipper_Lead_CAN_ID)
 
@@ -151,8 +151,8 @@ class RobotContainer:
                 drive_open_loop=SW.drive_open_loop,
             )
         )
-        #self.autoChooser = wpilib.SendableChooser()
-        #self.autoChooser.setDefaultOption("Auto 3pts")
+        # self.autoChooser = wpilib.SendableChooser()
+        # self.autoChooser.setDefaultOption("Auto 3pts")
 
         """Add named commands here"""
         """
@@ -161,7 +161,7 @@ class RobotContainer:
         for file in os.listdir(pathsPath):
             relevantName = file.split(".")[0] # Gets rid of .path/.auto in dropdown
             auton = PathPlannerAuto(relevantName) #makes it an auto
-            wpilib.SmartDashboard.putData(f"autos/{relevantName}", auton) #puts in in smartdashboard under autos
+            #wpilib.SmartDashboard.putData(f"autos/{relevantName}", auton) #puts in in smartdashboard under autos
             self.autoChooser.addOption(relevantName, auton)
 
         SmartDashboard.putData("Auto Chooser", self.autoChooser) #puts the chooser in shuffleboard
@@ -170,7 +170,7 @@ class RobotContainer:
         
 
         
-
+      
     def log_data(self):
         for pos in ("LF", "RF", "LB", "RB"):
             encoder = getattr(self, f"{pos.lower()}_enc")
@@ -301,15 +301,15 @@ class RobotContainer:
         climberdown.whileTrue(simplecommands.ClimberMove(-1, self.climber))
         
         manualAxisDown = self.buttonboard.axisLessThan(1, -.9) #axes on buttonboard are inverted, we installed it upside down
-        manualAxisDown.whileTrue(simplecommands.ArmMove(.2, self.coralmanip)) #moves algae manip up
+        manualAxisDown.whileTrue(armmove.ArmMove(self.coralmanip, -.3, True)) #moves algae manip up
 
         manualAxisUp = self.buttonboard.axisGreaterThan(1, .9)
-        manualAxisUp.whileTrue(simplecommands.ArmMove(-0.2, self.coralmanip)) #moves algae manip down
+        manualAxisUp.whileTrue(armmove.ArmMove(self.coralmanip, .3, True)) #moves algae manip down
         """
-        autoAxisDown = self.buttonboard.button(3) 
+        autoAxisDown = self.buttonboard.button(6) 
         autoAxisDown.onTrue(armmove.ArmMove(self.coralmanip, self.armconsts.kArmMinAngle)) #automatically moves to min angle
 
-        autoAxisUp = self.buttonboard.button(8) #TODO: Check
+        autoAxisUp = self.buttonboard.button(10)
         autoAxisUp.onTrue(armmove.ArmMove(self.coralmanip, self.armconsts.kArmMaxAngle)) #automatically moves to max angle
         """
         #manual shooting
@@ -319,7 +319,7 @@ class RobotContainer:
         feedbutton.whileTrue(simplecommands.Shoot(-0.5, self.shooter))
 
         #Coral Flipper
-        flipUp = self.buttonboard.button(4)
-        flipDown = self.buttonboard.button(5)
+        flipUp = self.buttonboard.button(5)
+        flipDown = self.buttonboard.button(4)
         flipUp.whileTrue(simplecommands.FlipCoral(self.flipper, .25))
         flipDown.whileTrue(simplecommands.FlipCoral(self.flipper, -.25))

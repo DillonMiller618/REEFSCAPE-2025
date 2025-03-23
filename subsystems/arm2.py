@@ -5,7 +5,7 @@ from wpilib import SmartDashboard
 
 class ArmConstants:
     # very scary setting! if set wrong, the arm will escape equilibrium and break something
-    kEncoderInverted = False
+    kEncoderInverted = True
 
     # one full revolution = 360 units (since we want degree units)
     kEncoderPositionFactor = 360
@@ -19,14 +19,14 @@ class ArmConstants:
     motorRevolutionsPerDegree = gearReduction / 360 * fudgeFactor
 
     kArmMinAngle = 0 #zero point
-    kArmMaxAngle = 105 #is climber angle
-    kArmScoringAngle = 60 #should be a 45
+    kArmMaxAngle = 45 #is climber angle
+    kArmScoringAngle = 30 #should be a 45
     kArmMaxWeightAngle = 30 #idk
     kAngleTolerance = 2.0 #idk
 
     # PID coefficients
     initialStaticGainTimesP = 3.5  # we are normally this many degrees off because of static forces
-    initialP = .3
+    initialP = .01
     initialI = 0.0
     initialD = 0.0
     additionalPMult = 3.0  # when close to target angle
@@ -57,7 +57,7 @@ class Arm(Subsystem):
         
         self.encoder.setPosition(0)
         self.angleGoal = ArmConstants.kArmMaxAngle #starts at high position, e.g. vertical
-        self.pidcontroller.setReference(self.angleGoal, SparkBase.ControlType.kPosition, ClosedLoopSlot.kSlot0)
+        #self.pidcontroller.setReference(self.angleGoal, SparkBase.ControlType.kPosition, ClosedLoopSlot.kSlot0)
 
 
     def periodic(self) -> None:
@@ -67,18 +67,26 @@ class Arm(Subsystem):
         """Gets the angle of the arm from the relative encoder in rotations"""
         return self.encoder.getPosition()
     
-    def checkAngle(self, tolerance) -> bool:
-        """Checks if the current angle is close to the setpoint, with a tolerance factor"""
-        pass
+    def periodic(self):
+        SmartDashboard.putNumber("Arm Position", self.encoder.getPosition())
     
-    def setAngleGoal(self, angle: Rotation2d):
-        self.angleGoal = angle.degrees()
+    def checkAngle(self, tolerance) -> bool:
+        """Checks if the current angle is close to the setpoint, with a tolerance factor in rotations"""
+        pass
+    """
+        if self.encoder.getPosition() <= self.encoder.getPosition() + tolerance and self.encoder.getPosition() >= self.encoder.getPosition() - tolerance:
+            return True
+        else:
+            return False
+    """
+    
+    def setAngleGoal(self, angle: float):
+        self.angleGoal = angle
         #keeping the angle in bounds by setting the angle if it is past normal operating range to the edge of operating.
         if self.angleGoal < ArmConstants.kArmMinAngle:
             self.angleGoal = ArmConstants.kArmMinAngle
         elif self.angleGoal > ArmConstants.kArmMaxAngle:
             self.angleGoal = ArmConstants.kArmMaxAngle
-
         self.pidcontroller.setReference(self.angleGoal, SparkMax.ControlType.kPosition, ClosedLoopSlot.kSlot0)
 
     def setSpeed(self, speed: float) -> None:
@@ -93,7 +101,7 @@ class Arm(Subsystem):
     def _getLeadMotorConfig(invert=False) -> SparkMaxConfig:
 
         config = SparkMaxConfig()
-        config.inverted(False)
+        config.inverted(ArmConstants.kEncoderInverted)
         config.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
         relPositionFactor = 1.0 / ArmConstants.motorRevolutionsPerDegree
         config.encoder.positionConversionFactor(relPositionFactor)

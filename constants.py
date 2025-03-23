@@ -121,7 +121,7 @@ op_data = {
     # following parameters.  Setting to None is the same as setting to
     # max_speed/max_angular_velocity, and indicates no limit.
     
-    "speed_limit": 1.75 * (u.m / u.s), #the highest controllable value that our drivers were comfortable with this year.
+    "speed_limit": 2.25 * (u.m / u.s), #the highest controllable value that our drivers were comfortable with this year.
     "angular_velocity_limit": 2.5 * (u.rad / u.s),
 
     # For NEO / SparkMAX, use the following

@@ -16,12 +16,10 @@ class Robot(commands2.TimedCommandRobot):
         self.autonomous_command: Optional[commands2.Command] = None
 
     def autonomousInit(self) -> None:
-        """
         self.autonomous_command = self.container.get_auto_command()
         if self.autonomous_command:
             self.autonomous_command.schedule()
-        """
-        pass
+        #pass
         
         
 
