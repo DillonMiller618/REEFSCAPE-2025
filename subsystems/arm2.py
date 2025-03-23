@@ -14,12 +14,12 @@ class ArmConstants:
     kEncoderPositionToVelocityFactor = 1.0 / 60
 
     # calculating how many motor revolutions are needed to move arm by one degree
-    gearReduction = 80.0
+    gearReduction = 100.0
     fudgeFactor = 1  # empirical, if needed
     motorRevolutionsPerDegree = gearReduction / 360 * fudgeFactor
 
     kArmMinAngle = 0 #zero point
-    kArmMaxAngle = 45 #is climber angle
+    kArmMaxAngle = 140 #is climber angle
     kArmScoringAngle = 30 #should be a 45
     kArmMaxWeightAngle = 30 #idk
     kAngleTolerance = 2.0 #idk
@@ -28,7 +28,8 @@ class ArmConstants:
     initialStaticGainTimesP = 3.5  # we are normally this many degrees off because of static forces
     initialP = .01
     initialI = 0.0
-    initialD = 0.0
+    initialD = 0.005
+    feedForward = 0.000156
     additionalPMult = 3.0  # when close to target angle
 
     initialMaxOutput = 1
@@ -117,7 +118,7 @@ class Arm(Subsystem):
         config.softLimit.forwardSoftLimit(ArmConstants.kArmMaxAngle)
 
         config.closedLoop.pid(ArmConstants.initialP, ArmConstants.initialI, ArmConstants.initialD)
-        config.closedLoop.velocityFF(0.0)  # because position control
+        config.closedLoop.velocityFF(ArmConstants.feedForward)  # because position control
         config.closedLoop.outputRange(ArmConstants.initialMinOutput, ArmConstants.initialMaxOutput)
 
         return config

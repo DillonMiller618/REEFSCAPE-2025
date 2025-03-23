@@ -212,7 +212,7 @@ class RobotContainer:
     
     def get_auto_command(self):
         #path = PathPlannerPath.fromPathFile(self.autoChooser.getSelected())
-        path = PathPlannerPath.fromPathFile("Auto 3pts") #just selects the most basic auto, for testing purposes
+        path = PathPlannerPath.fromPathFile("The dumbest path ever") #just selects the most basic auto, for testing purposes
         return AutoBuilder.followPath(path)
 
     #TODO: Test Limelight code
