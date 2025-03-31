@@ -12,6 +12,8 @@ This file defines constants related to your robot.  These constants include:
  * Software constants (USB ID for driver joystick)
 """
 
+#https://docs.google.com/document/d/1Uh3FElSqB26P4WG2fAvQatyAOpxFWfXhSTuvogocAvs/edit?tab=t.0#bookmark=id.ohuildph6vjm
+
 import math
 from collections import namedtuple
 import rev, phoenix5
@@ -121,8 +123,8 @@ op_data = {
     # following parameters.  Setting to None is the same as setting to
     # max_speed/max_angular_velocity, and indicates no limit.
     
-    "speed_limit": 2.25 * (u.m / u.s), #the highest controllable value that our drivers were comfortable with this year.
-    "angular_velocity_limit": 2.5 * (u.rad / u.s),
+    "speed_limit": 4.5 * (u.m / u.s), #the highest controllable value that our drivers were comfortable with this year.
+    "angular_velocity_limit": 12.5 * (u.rad / u.s),
 
     # For NEO / SparkMAX, use the following
     "propulsion_neutral": rev.SparkMax.IdleMode.kBrake,
@@ -151,6 +153,9 @@ sw_data = {
     # target velocity).
     #
     "drive_open_loop": True,
+
+    #Debug is for non-competition use. Basically controls how much data is spat into networktables.
+    "debug_Mode": False,
 
     # Constants for PID control of the propulsion AND steering motors
     # (kP must be non-zero, or azimuth motors won't engage.)

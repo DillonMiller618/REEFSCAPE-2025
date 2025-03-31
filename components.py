@@ -4,6 +4,9 @@ defining which components (and thus which classes) you're using, calling the
 appropriate constructors, and passing in variables.  Since this many lines of
 code takes up space, it can obscure what's going on around it, so we'll do
 all that here instead of in the container.py module.
+Side note: This file is already configured for Mk4is, and if that's what you're using,
+you can leave this file alone. If not, look in swervepy's impl folder for
+class definitions, and pass them in here.
 """
 
 

@@ -1,25 +1,25 @@
-import math, os
-import logging
+#https://docs.google.com/document/d/1Uh3FElSqB26P4WG2fAvQatyAOpxFWfXhSTuvogocAvs/edit?tab=t.0#bookmark=id.cxhyhp336yos
 
-logger = logging.getLogger("your.robot")
+import logging, math
 
-from rev import SparkMax
+logger = logging.getLogger("6932Log")
+
 import wpilib
 from wpilib import PS4Controller, SmartDashboard
 from wpilib.interfaces import GenericHID
-from wpimath.geometry import Translation2d, Rotation2d
 from pathplannerlib.path import PathPlannerPath
 from pathplannerlib.auto import PathPlannerAuto, AutoBuilder, NamedCommands
 import commands2
 
-from swervepy import u, SwerveDrive, TrajectoryFollowerParameters
-from swervepy.impl import CoaxialSwerveModule
+from swervepy import u, SwerveDrive
 
-from constants import PHYS, MECH, ELEC, OP, SW, DS, AUTO
+from constants import ELEC, OP, SW, DS, AUTO
 import components
 from commands import miscdriver, simplecommands, armmove
 from commands.drive import resetxy
 from commands2 import InstantCommand, RunCommand
+
+from utils import makeSwerveComponents
 
 
 class RobotContainer:
@@ -51,72 +51,6 @@ class RobotContainer:
         # to access in configure_button_bindings
         self.armconsts = ArmConstants
 
-        # The Azimuth component included the absolute encoder because it needs
-        # to be able to reset to absolute position.
-        
-        self.lf_enc = components.absolute_encoder_class(ELEC.LF_encoder_CAN_ID, MECH.steering_encoder_inverted)
-        self.lb_enc = components.absolute_encoder_class(ELEC.LB_encoder_CAN_ID, MECH.steering_encoder_inverted)
-        self.rb_enc = components.absolute_encoder_class(ELEC.RB_encoder_CAN_ID, MECH.steering_encoder_inverted)
-        self.rf_enc = components.absolute_encoder_class(ELEC.RF_encoder_CAN_ID, MECH.steering_encoder_inverted)
-        modules = (
-            # Left Front module
-            CoaxialSwerveModule(
-                drive=components.drive_component_class(
-                    id_=ELEC.LF_drive_CAN_ID,
-                    parameters=components.drive_params,
-                ),
-                azimuth=components.azimuth_component_class(
-                    id_=ELEC.LF_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(MECH.LF_Encoder_Offset),
-                    parameters=components.azimuth_params,
-                    absolute_encoder=self.lf_enc,
-                ),
-                placement=Translation2d(*components.module_locations["LF"]),
-            ),
-            # Right Front module
-            CoaxialSwerveModule(
-                drive=components.drive_component_class(
-                    id_=ELEC.RF_drive_CAN_ID,
-                    parameters=components.drive_params,
-                ),
-                azimuth=components.azimuth_component_class(
-                    id_=ELEC.RF_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(MECH.RF_Encoder_Offset),
-                    parameters=components.azimuth_params,
-                    absolute_encoder=self.rf_enc,
-                ),
-                placement=Translation2d(*components.module_locations["RF"]),
-            ),
-            # Left Back module
-            CoaxialSwerveModule(
-                drive=components.drive_component_class(
-                    id_=ELEC.LB_drive_CAN_ID,
-                    parameters=components.drive_params,
-                ),
-                azimuth=components.azimuth_component_class(
-                    id_=ELEC.LB_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(MECH.LB_Encoder_Offset),
-                    parameters=components.azimuth_params,
-                    absolute_encoder=self.lb_enc,
-                ),
-                placement=Translation2d(*components.module_locations["LB"]),
-            ),
-            # Right Back module
-            CoaxialSwerveModule(
-                drive=components.drive_component_class(
-                    id_=ELEC.RB_drive_CAN_ID,
-                    parameters=components.drive_params,
-                ),
-                azimuth=components.azimuth_component_class(
-                    id_=ELEC.RB_steer_CAN_ID,
-                    azimuth_offset=Rotation2d.fromDegrees(MECH.RB_Encoder_Offset),
-                    parameters=components.azimuth_params,
-                    absolute_encoder=self.rb_enc,
-                ),
-                placement=Translation2d(*components.module_locations["RB"]),
-            ),
-        )
-
         self.stick = wpilib.Joystick(0)
 
         self.speed_limit_ratio = 1.0
@@ -134,14 +68,10 @@ class RobotContainer:
                 self.angular_velocity_limit_ratio = (
                     OP.angular_velocity_limit / OP.max_angular_velocity)
 
-        # Define a swerve drive subsystem by passing in a list of SwerveModules
-        # and some options
-        #
-        self.swerve = SwerveDrive(modules, self.gyro, OP.max_speed, OP.max_angular_velocity, path_following_params=AUTO)
+        # Define a swerve drive subsystem by passing in a list of SwerveModules and some options
+        self.swerve = SwerveDrive(makeSwerveComponents(), self.gyro, OP.max_speed, OP.max_angular_velocity, path_following_params=AUTO)
 
-        # Set the swerve subsystem's default command to teleoperate using
-        # the controller joysticks
-        #
+        # Set the swerve subsystem's default command to teleoperate using the controller joysticks
         self.swerve.setDefaultCommand(
             self.swerve.teleop_command(
                 translation=self.get_translation_input,
@@ -151,31 +81,14 @@ class RobotContainer:
                 drive_open_loop=SW.drive_open_loop,
             )
         )
-        # self.autoChooser = wpilib.SendableChooser()
-        # self.autoChooser.setDefaultOption("Auto 3pts")
+        self.autoChooser = AutoBuilder.buildAutoChooser("Auto 3pts")
 
-        """Add named commands here"""
-        """
-        #TODO: Check this implementation
-        pathsPath = os.path.join(wpilib.getDeployDirectory(), "pathplanner", "autos")
-        for file in os.listdir(pathsPath):
-            relevantName = file.split(".")[0] # Gets rid of .path/.auto in dropdown
-            auton = PathPlannerAuto(relevantName) #makes it an auto
-            #wpilib.SmartDashboard.putData(f"autos/{relevantName}", auton) #puts in in smartdashboard under autos
-            self.autoChooser.addOption(relevantName, auton)
+        """Add auto named commands here"""
 
-        SmartDashboard.putData("Auto Chooser", self.autoChooser) #puts the chooser in shuffleboard
-        """
-        self.configure_button_bindings() #check below, adds all commands
-        
-
-        
-      
-    def log_data(self):
-        for pos in ("LF", "RF", "LB", "RB"):
-            encoder = getattr(self, f"{pos.lower()}_enc")
-            wpilib.SmartDashboard.putNumber(f"{pos} absolute encoder", encoder.absolute_position_degrees)
-            wpilib.SmartDashboard.putNumber(f"{pos} absolute encoder", encoder.absolute_position_degrees)
+        self.configure_button_bindings()
+        #TODO: implement Debug mode, test if this code works
+        if SW.debug_Mode == True:
+            ...
 
     @staticmethod
     def deadband(value, band):
@@ -211,27 +124,10 @@ class RobotContainer:
             raw_stick_val, invert=invert, limit_ratio=self.angular_velocity_limit_ratio)
     
     def get_auto_command(self):
-        #path = PathPlannerPath.fromPathFile(self.autoChooser.getSelected())
-        path = PathPlannerPath.fromPathFile("The dumbest path ever") #just selects the most basic auto, for testing purposes
+        path = PathPlannerPath.fromPathFile(self.autoChooser.getSelected())
+        # path = PathPlannerPath.fromPathFile("The dumbest path ever") #just selects the most basic auto, for testing purposes
         return AutoBuilder.followPath(path)
-
-    #TODO: Test Limelight code
-    def makeAlignWithAprilTagCommand(self):
-        from commands.drive.setcamerapipeline import SetCameraPipeline
-        from commands.drive.followobject import FollowObject, StopWhen
-        from commands.drive.approach import ApproachTag
-        from commands.drive.swervetopoint import SwerveToSide
-
-        # switch to camera pipeline 3, to start looking for certain kind of AprilTags
-        lookForTheseTags = SetCameraPipeline(self.camera, 3)
-        approachTheTag = FollowObject(self.camera, self.swerve, stopWhen=StopWhen(maxSize=4), speed=0.3)  # stop when tag size=4 (4% of the frame pixels)
-        alignAndPush = ApproachTag(self.camera, self.swerve, None, speed=0.5, pushForwardSeconds=1.0)  # tuning this at speed=0.5, should be comfortable setting speed=1.0 instead
-
-        # or you can do this, if you want to score the coral 15 centimeters to the right and two centimeters back from the AprilTag
-        stepToSide = SwerveToSide(drivetrain=self.swerve, metersToTheLeft=-0.15, metersBackwards=0.02, speed=0.2)
-        alignToScore = lookForTheseTags.andThen(approachTheTag).andThen(alignAndPush).andThen(stepToSide)
-
-        return alignToScore
+    
 
     def configure_button_bindings(self):
         """
@@ -241,19 +137,19 @@ class RobotContainer:
         Analog or Digital Sticks
         PS4 Right Stick (not here, in swervepy): Stationary drive rotation
         PS4 Left Stick (not here, in swervepy): Swerve Drive 
-        Button Board Stick Vertical: Move elevator up and down at a constant rate
+        Button Board Stick Vertical: Move arm vertically (speed control)
         Button Board Stick Horizontal: not implemented
 
         Bumpers and triggers (PS4)
-        Left Bumper (L1): Moves to preset switch position (should be top) TODO: check this
-        Right Bumper (R1): Moves to preset switch position (should be bottom) TODO: check this
+        Left Bumper (L1): not implemented
+        Right Bumper (R1): not implemented
         Left Analog Trigger (L2): not implemented
         Right Analog Trigger (R2): not implemented
 
         Buttons (PS4)
-        Cross: Turn arm to set zero point
-        Square: turn to apriltag
-        Circle: Turn arm to set scoring point (45)
+        Cross: not implemented
+        Square: not implemented
+        Circle: not implemented
         Triangle: Reset gyro heading
 
         povUp: Climber up (moves the robot down)
@@ -263,28 +159,16 @@ class RobotContainer:
         (no diagonals are used)
 
         Buttons (Button Board)
-        ID1: not implemented
-        ID2: not implemented
-        ID3: Move elevator to 33 inches TODO: change this to buttonboard for each height of coral
-        ID4:
-        ID5:
+        ID1: Feed arm intake
+        ID2: Shoot arm Intake
+        ID3: 
+        ID4: Flip Coral Flipper Up
+        ID5: Flip Coral Flipper Down
         ID6:
         ID7:
         ID8:
         ID9:
         ID10:
-        """
-        """
-        def turn_to_object():
-            x = self.camera.getX()
-            print(f"x={x}")
-            turn_speed = -0.005 * x
-            self.swerve.rotate(turn_speed)
-            # if you want your robot to slowly chase that object... replace this line above with: self.robotDrive.arcadeDrive(0.1, turn_speed)
-
-            bButton = self.driverController.button(PS4Controller.Button.kSquare)
-            bButton.whileTrue(commands2.RunCommand(turn_to_object, self.swerve.drive))
-            bButton.onFalse(commands2.InstantCommand(lambda: self.swerve.drive(0, 0, False, False)))
         """
         # Initialize a seperate controller, on the same port, so I can more easily use bindings, and for code verbosity
         self.driverController = commands2.button.CommandGenericHID(DS.kDriverControllerPort)
@@ -300,19 +184,21 @@ class RobotContainer:
         climberup.whileTrue(simplecommands.ClimberMove(1, self.climber))
         climberdown.whileTrue(simplecommands.ClimberMove(-1, self.climber))
         
+        #Move the arm up and down, manually
         manualAxisDown = self.buttonboard.axisLessThan(1, -.9) #axes on buttonboard are inverted, we installed it upside down
         manualAxisDown.whileTrue(armmove.ArmMove(self.coralmanip, -.3, True)) #moves algae manip up
 
         manualAxisUp = self.buttonboard.axisGreaterThan(1, .9)
         manualAxisUp.whileTrue(armmove.ArmMove(self.coralmanip, .3, True)) #moves algae manip down
         """
+        #move the arm to setpoints, automatically
         autoAxisDown = self.buttonboard.button(6) 
         autoAxisDown.onTrue(armmove.ArmMove(self.coralmanip, self.armconsts.kArmMinAngle)) #automatically moves to min angle
 
         autoAxisUp = self.buttonboard.button(10)
         autoAxisUp.onTrue(armmove.ArmMove(self.coralmanip, self.armconsts.kArmMaxAngle)) #automatically moves to max angle
         """
-        #manual shooting
+        #shooting
         shootButton = self.buttonboard.button(1)
         feedbutton = self.buttonboard.button(2)
         shootButton.whileTrue(simplecommands.Shoot(1, self.shooter))

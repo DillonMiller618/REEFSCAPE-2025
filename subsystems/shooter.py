@@ -1,10 +1,11 @@
-from wpilib import AnalogInput, RobotController
 from rev import SparkBaseConfig, SparkMax, SparkMaxConfig, SparkBase
 from commands2 import Subsystem
 from constants import ELEC
+from utils import getLeadMotorConfig
 
 class ShooterConstants:
     gearRatio = 1
+    invert = False
 
     kPositionConversionFactor = 1.0
     kVelocityConversionFactor = 1.0
@@ -22,7 +23,8 @@ class Shooter(Subsystem):
             self.isfollowMotor = True
         # Start class and config, get constants
         constants = ShooterConstants
-        self.motor = SparkMax(motorCanID, SparkBase.MotorType.kBrushless)        
+        self.motor = SparkMax(motorCanID, SparkBase.MotorType.kBrushless) 
+               
         self.mconfig = SparkBaseConfig()
         # Configure the motor with constants
         self.mconfig.inverted(False)
@@ -48,14 +50,10 @@ class Shooter(Subsystem):
             self.m2config.follow(motorCanID, invert=True)
             self.followmotor.configure(self.m2config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
 
-        #self.ultrasonic = AnalogInput(0)
-        #self.voltage_scale_factor = 5/RobotController.getVoltage5V()
-        #self.normaldist = self.ultrasonic.getValue() * self.voltage_scale_factor * 0.0492 #in inches
-
     def spinShooter(self, speed):
         self.motor.set(speed * ShooterConstants.kMaxPower)
         if self.isfollowMotor:
-            self.followmotor.set(speed * ShooterConstants.kMaxPower)
+            self.followmotor.set(min(speed, ShooterConstants.kMaxPower))
 
     def stopShooter(self):
         self.motor.stopMotor()        
