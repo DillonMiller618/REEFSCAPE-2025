@@ -7,7 +7,7 @@
 - Python 3.13+
 - WPILib 2025.2.1
 
-## How to use to connect and deploy to an FRC bot
+## How to use, connect and deploy to an FRC bot
 Make sure as (as a preemptive step) you are using the most recent version of WPILib's VSCode. Then, make sure you have the FRC Driver Station Application, downloadable through [Ni's FRC Game Tools](https://www.ni.com/en/support/downloads/drivers/download.frc-game-tools.html). Once you have these applications open and ready, follow the steps below:
 1) Power on the FRC bot you intend to connect to by flipping its breaker.
 2) Connect to the RoboRIO through either:
