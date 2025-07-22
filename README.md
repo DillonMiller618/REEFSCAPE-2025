@@ -17,7 +17,7 @@ Make sure as (as a preemptive step) you are using the most recent version of WPI
     - *Note: Uploading through WPILib's command palette only works for Java and C++, not Python.*
 4) To deploy (upload) program code, run a command in the terminal:  ```py -3 -m robotpy deploy```
     - *Note: Unless you have Unit Tests for your program, you can add --skip-tests to avoid it checking for them.*'
-5) You're done! Good luck.
+5) You're done! There is more to the process of writing code for an FRC bot, but I'll leave it here. This is just to tell you how to upload and connect to a robot, not how to write the code itself. There are good guides out there for Python code in FRC, but there is a lot of trial and error involved. I wish you the best with using this code, and be sure to let me know about all the dumb mistakes I've made when I wrote this.
 
 ## How to add any manner of subsystems (if threre isn't one already):
 *Note: not all of these subsystems have been tested! You will definitely run into bugs and might not be able to use them!*
