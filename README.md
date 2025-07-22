@@ -16,7 +16,8 @@ Make sure as (as a preemptive step) you are using the most recent version of WPI
 3) At this point, you would be able to enable and disable the robot, as well as upload code to the robot. Enable/disable controls are in the FRC Driver Station application, and uploading takes place in WPILib VSCode.
     - *Note: Uploading through WPILib's command palette only works for Java and C++, not Python.*
 4) To deploy (upload) program code, run a command in the terminal:  ```py -3 -m robotpy deploy```
-    - *Note: Unless you have Unit Tests for your program, you can add --skip-tests to avoid it checking for them.*
+    - *Note: Unless you have Unit Tests for your program, you can add --skip-tests to avoid it checking for them.*'
+5) You're done! Good luck.
 
 ## How to add any manner of subsystems (if threre isn't one already):
 *Note: not all of these subsystems have been tested! You will definitely run into bugs and might not be able to use them!*
